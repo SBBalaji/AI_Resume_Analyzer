@@ -1,0 +1,212 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Admin Dashboard</title>
+
+    <style>
+      body {
+        font-family: Arial;
+        background: #f4f6f9;
+        margin: 0;
+      }
+
+      .navbar {
+        background: #2c3e50;
+        color: white;
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+      }
+
+      .nav-links a {
+        color: white;
+        margin-left: 20px;
+        text-decoration: none;
+        font-weight: bold;
+      }
+
+      .settings {
+        position: relative;
+        display: inline-block;
+        margin-left: 20px;
+        cursor: pointer;
+      }
+
+      .dropdown {
+        display: none;
+        position: absolute;
+        background: white;
+        min-width: 120px;
+        right: 0;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+      }
+
+      .dropdown a {
+        display: block;
+        padding: 10px;
+        color: black;
+        text-decoration: none;
+      }
+
+      .dropdown a:hover {
+        background: #f4f4f4;
+      }
+
+      .settings:hover .dropdown {
+        display: block;
+      }
+
+      table {
+        width: 90%;
+        margin: auto;
+        border-collapse: collapse;
+        background: white;
+        margin-top: 40px;
+      }
+
+      th {
+        background: #667eea;
+        color: white;
+        padding: 10px;
+      }
+
+      td {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      /* ============================= */
+      /* RESPONSIVE DESIGN MEDIA QUERY */
+      /* ============================= */
+
+      /* Tablets */
+      @media (max-width: 1024px) {
+        .navbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .nav-links {
+          margin-top: 10px;
+        }
+      }
+
+      /* Mobile Devices */
+      @media (max-width: 768px) {
+        .nav-links {
+          flex-wrap: wrap;
+        }
+
+        .nav-links a {
+          margin-left: 10px;
+          margin-top: 5px;
+        }
+
+        table {
+          width: 100%;
+          font-size: 14px;
+        }
+      }
+
+      /* Small Phones */
+      @media (max-width: 480px) {
+        .navbar {
+          padding: 10px 15px;
+        }
+
+        table {
+          font-size: 12px;
+        }
+
+        th,
+        td {
+          padding: 6px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div><b>AI Resume Analyzer</b></div>
+
+      <div class="nav-links">
+        <a href="index.html">Dashboard</a>
+        <a href="admin.html">Admin</a>
+
+        <div class="settings">
+          <span id="userInfo"></span>
+
+          <div class="dropdown">
+            <a href="logout.html">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 style="text-align: center; margin-top: 30px">Admin Dashboard</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Resume Email</th>
+          <th>Resume Name</th>
+          <th>Score</th>
+          <th>Matched</th>
+          <th>Missing</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+
+      <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+      /* LOGIN PROTECTION ADDED */
+      if (!localStorage.getItem("userEmail")) {
+        window.location = "login.html";
+      }
+
+      const name = localStorage.getItem("userName");
+      const email = localStorage.getItem("userEmail");
+
+      document.getElementById("userInfo").innerText = name + " (" + email + ")";
+
+      async function loadData() {
+        const adminEmail = localStorage.getItem("userEmail");
+
+        const res = await fetch(
+          "http://localhost:8080/api/admin/analysis?adminEmail=" + adminEmail,
+        );
+
+        const data = await res.json();
+
+        const table = document.getElementById("tableBody");
+
+        table.innerHTML = "";
+
+        data.forEach((a) => {
+          table.innerHTML += `
+<tr>
+<td>${a.resumeEmail}</td>
+<td>${a.resumeName}</td>
+<td>${a.matchScore}%</td>
+<td>${a.matchedSkills}</td>
+<td>${a.missingSkills}</td>
+<td>${a.analysisDate}</td>
+</tr>
+`;
+        });
+      }
+
+      loadData();
+    </script>
+  </body>
+</html>

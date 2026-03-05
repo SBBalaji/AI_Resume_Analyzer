@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Forgot Password</title>
+
+    <style>
+      body {
+        font-family: Arial;
+        background: #eef2f7;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .container {
+        background: white;
+        padding: 40px;
+        width: 350px;
+        border-radius: 10px;
+        box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.2);
+        text-align: center;
+      }
+
+      input {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        background: #667eea;
+        border: none;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #5a67d8;
+      }
+
+      .login-link {
+        margin-top: 15px;
+        font-size: 14px;
+      }
+
+      .login-link a {
+        color: #667eea;
+        font-weight: bold;
+        text-decoration: none;
+      }
+
+      .login-link a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h2>Forgot Password</h2>
+
+      <input id="email" placeholder="Enter Email" />
+
+      <button onclick="sendOtp()">Send OTP</button>
+
+      <br /><br />
+
+      <input id="otp" placeholder="Enter OTP" />
+
+      <input id="newPassword" placeholder="New Password" />
+
+      <button onclick="resetPassword()">Reset Password</button>
+
+      <div class="login-link">
+        Remember your password?
+        <a href="login.html">Back to Login</a>
+      </div>
+    </div>
+
+    <script>
+      async function sendOtp() {
+        const email = document.getElementById("email").value;
+
+        if (!email) {
+          alert("Enter email first");
+          return;
+        }
+
+        const res = await fetch(
+          "http://localhost:8080/api/auth/forgot-password?email=" + email,
+          {
+            method: "POST",
+          },
+        );
+
+        const text = await res.text();
+
+        alert(text);
+      }
+
+      async function resetPassword() {
+        const email = document.getElementById("email").value;
+        const otp = document.getElementById("otp").value;
+        const newPassword = document.getElementById("newPassword").value;
+
+        if (!email || !otp || !newPassword) {
+          alert("Please fill all fields");
+          return;
+        }
+
+        const res = await fetch(
+          `http://localhost:8080/api/auth/reset-password?email=${email}&otp=${otp}&newPassword=${newPassword}`,
+          {
+            method: "POST",
+          },
+        );
+
+        const text = await res.text();
+
+        alert(text);
+
+        if (text === "Password reset successful") {
+          setTimeout(() => {
+            window.location = "login.html";
+          }, 1500);
+        }
+      }
+    </script>
+  </body>
+</html>

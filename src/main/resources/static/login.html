@@ -1,0 +1,184 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Login | AI Resume Analyzer</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: Arial;
+      }
+
+      body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(-45deg, #667eea, #764ba2, #6a11cb, #2575fc);
+        background-size: 400% 400%;
+        animation: gradientMove 8s ease infinite;
+      }
+
+      .container {
+        background: white;
+        padding: 40px;
+        width: 350px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      h2 {
+        text-align: center;
+        margin-bottom: 25px;
+      }
+
+      input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+
+      .password-box {
+        position: relative;
+      }
+
+      .toggle {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        font-size: 12px;
+        color: #667eea;
+        font-weight: bold;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        background: #667eea;
+        border: none;
+        color: white;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      #loginLoading {
+        display: none;
+        text-align: center;
+        color: #667eea;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+
+      /* NEW STYLE FOR LINKS */
+      .links {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 14px;
+      }
+
+      .links a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: bold;
+      }
+
+      .links a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h2>Login</h2>
+
+      <form id="loginForm">
+        <label>Email</label>
+        <input id="email" required placeholder="Enter your email" />
+
+        <label>Password</label>
+
+        <div class="password-box">
+          <input
+            id="password"
+            type="password"
+            required
+            placeholder="Enter password"
+          />
+          <span
+            class="toggle"
+            onclick="togglePassword('password', 't3')"
+            id="t3"
+            >Show</span
+          >
+        </div>
+
+        <button type="submit">Login</button>
+      </form>
+
+      <p id="loginLoading">Logging in...</p>
+
+      <!-- NEW FORGOT PASSWORD LINK -->
+      <div class="links">
+        <p>Forgot password? <a href="forgot.html">Reset here</a></p>
+        <p>Don't have account? <a href="signup.html">Signup</a></p>
+      </div>
+    </div>
+
+    <script>
+      function togglePassword(id, toggle) {
+        const field = document.getElementById(id);
+        const btn = document.getElementById(toggle);
+
+        if (field.type === "password") {
+          field.type = "text";
+          btn.innerText = "Hide";
+        } else {
+          field.type = "password";
+          btn.innerText = "Show";
+        }
+      }
+
+      document.getElementById("loginForm").addEventListener("submit", login);
+
+      async function login(e) {
+        e.preventDefault();
+
+        const email = document.getElementById("email").value;
+
+        const data = {
+          email: email,
+          password: document.getElementById("password").value,
+        };
+
+        const res = await fetch("http://localhost:8080/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        const text = await res.text();
+
+        if (text === "Login Successful") {
+          const name = email.split("@")[0];
+
+          localStorage.setItem("userName", name);
+          localStorage.setItem("userEmail", email);
+
+          document.getElementById("loginLoading").style.display = "block";
+
+          setTimeout(() => {
+            window.location = "index.html";
+          }, 1500);
+        } else {
+          alert(text);
+        }
+      }
+    </script>
+  </body>
+</html>

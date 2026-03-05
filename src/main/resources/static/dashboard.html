@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Resume Analyzer Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+  <body>
+    <h2>Resume Skill Dashboard</h2>
+
+    <form id="resumeForm">
+      Resume PDF:
+      <input type="file" id="file" required /><br /><br />
+
+      Job Skills (comma separated):
+      <input
+        type="text"
+        id="jobDesc"
+        placeholder="java,spring boot,mysql"
+      /><br /><br />
+
+      Email:
+      <input type="text" id="email" /><br /><br />
+
+      <button type="submit">Analyze Resume</button>
+    </form>
+
+    <br /><br />
+
+    <canvas id="skillChart"></canvas>
+
+    <script>
+      document
+        .getElementById("resumeForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const formData = new FormData();
+          formData.append("file", document.getElementById("file").files[0]);
+          formData.append("jobDesc", document.getElementById("jobDesc").value);
+          formData.append("email", document.getElementById("email").value);
+
+          const response = await fetch(
+            "http://localhost:8080/api/resume/upload",
+            {
+              method: "POST",
+              body: formData,
+            },
+          );
+
+          const result = await response.json();
+
+          const matched = result.matchedSkills;
+          const missing = result.missingSkills;
+
+          const labels = [...matched, ...missing];
+
+          const dataValues = [];
+
+          matched.forEach(() => dataValues.push(100));
+          missing.forEach(() => dataValues.push(0));
+
+          const colors = [];
+
+          matched.forEach(() => colors.push("green"));
+          missing.forEach(() => colors.push("red"));
+
+          new Chart(document.getElementById("skillChart"), {
+            type: "bar",
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: "Skill Match",
+                  data: dataValues,
+                  backgroundColor: colors,
+                },
+              ],
+            },
+          });
+        });
+    </script>
+  </body>
+</html>

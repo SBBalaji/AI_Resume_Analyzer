@@ -1,0 +1,425 @@
+<!doctype html>
+<html>
+  <head>
+    <title>AI Resume Analyzer</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #eef2f7;
+      }
+
+      .navbar {
+        background: #2c3e50;
+        color: white;
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+      }
+
+      .nav-links a {
+        color: white;
+        margin-left: 20px;
+        text-decoration: none;
+        font-weight: bold;
+      }
+
+      .settings {
+        position: relative;
+        display: inline-block;
+        margin-left: 20px;
+        cursor: pointer;
+      }
+
+      .dropdown {
+        display: none;
+        position: absolute;
+        background: white;
+        min-width: 120px;
+        right: 0;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+      }
+
+      .dropdown a {
+        display: block;
+        padding: 10px;
+        color: black;
+        text-decoration: none;
+      }
+
+      .dropdown a:hover {
+        background: #f4f4f4;
+      }
+
+      .settings:hover .dropdown {
+        display: block;
+      }
+
+      .dashboard {
+        width: 90%;
+        margin: auto;
+        margin-top: 30px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+      }
+
+      .card {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .upload-area {
+        border: 2px dashed #667eea;
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: 15px;
+        transition: 0.3s;
+      }
+
+      .upload-area:hover {
+        background: #f0f3ff;
+      }
+
+      .upload-area.dragover {
+        background: #e8ecff;
+        border-color: #5a67d8;
+      }
+
+      #fileName {
+        margin-top: 10px;
+        font-weight: bold;
+      }
+
+      label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+      }
+
+      input {
+        width: 95%;
+        padding: 10px;
+        margin: 8px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+
+      button {
+        padding: 10px 15px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-right: 5px;
+      }
+
+      button:hover {
+        background: #5a67d8;
+      }
+
+      .remove-btn {
+        background: #e74c3c;
+      }
+
+      .remove-btn:hover {
+        background: #c0392b;
+      }
+
+      .result-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .matched {
+        color: green;
+      }
+
+      .missing {
+        color: red;
+      }
+
+      #score {
+        font-size: 22px;
+        margin-top: 10px;
+        font-weight: bold;
+      }
+
+      /* ============================= */
+      /* RESPONSIVE DESIGN MEDIA QUERY */
+      /* ============================= */
+
+      @media (max-width: 1024px) {
+        .dashboard {
+          grid-template-columns: 1fr;
+        }
+
+        .card {
+          padding: 20px;
+        }
+
+        .navbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .nav-links {
+          margin-top: 10px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .dashboard {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+
+        .upload-area {
+          padding: 20px;
+        }
+
+        .nav-links {
+          flex-wrap: wrap;
+        }
+
+        .nav-links a {
+          margin-left: 10px;
+          margin-top: 5px;
+        }
+
+        button {
+          width: 100%;
+          margin-top: 10px;
+        }
+
+        input {
+          width: 100%;
+        }
+      }
+
+      #score {
+        margin-top: 15px;
+        font-size: 18px;
+        line-height: 28px;
+      }
+
+      @media (max-width: 480px) {
+        .navbar {
+          padding: 10px 15px;
+        }
+
+        h3 {
+          font-size: 18px;
+        }
+
+        button {
+          font-size: 14px;
+          padding: 10px;
+        }
+
+        table {
+          font-size: 12px;
+        }
+
+        th,
+        td {
+          padding: 6px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div><b>AI Resume Analyzer</b></div>
+
+      <div class="nav-links">
+        <a href="index.html">Dashboard</a>
+        <a href="admin.html">Admin</a>
+
+        <div class="settings">
+          <span id="userInfo"></span>
+
+          <div class="dropdown">
+            <a href="logout.html">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard">
+      <div class="card">
+        <h3>Upload Resume</h3>
+
+        <form id="resumeForm">
+          <div class="upload-area" id="dropArea">
+            <p>Drag & Drop Resume Here</p>
+            <p class="recommend">Recommended: Upload PDF resume</p>
+
+            <input type="file" id="file" hidden />
+
+            <button type="button" onclick="fileInput.click()">
+              Choose File
+            </button>
+
+            <button type="button" class="remove-btn" onclick="clearResume()">
+              Remove Resume
+            </button>
+
+            <p id="fileName"></p>
+          </div>
+
+          <label for="jobDesc">Enter Job Description Skills</label>
+
+          <input
+            type="text"
+            id="jobDesc"
+            placeholder="Example: java,spring,mysql,react"
+            required
+          />
+
+          <button type="submit">Analyze Resume</button>
+        </form>
+
+        <div id="score"></div>
+      </div>
+
+      <div class="card">
+        <h3>Skill Analysis</h3>
+
+        <h4>Matched Skills</h4>
+        <ul id="matched" class="result-list"></ul>
+
+        <h4>Missing Skills</h4>
+        <ul id="missing" class="result-list"></ul>
+
+        <canvas id="skillChart"></canvas>
+      </div>
+    </div>
+
+    <script>
+      if (!localStorage.getItem("userEmail")) {
+        window.location = "login.html";
+      }
+
+      const name = localStorage.getItem("userName");
+      const email = localStorage.getItem("userEmail");
+
+      if (name && email) {
+        document.getElementById("userInfo").innerText =
+          name + " (" + email + ")";
+      }
+
+      const fileInput = document.getElementById("file");
+      const dropArea = document.getElementById("dropArea");
+      const fileName = document.getElementById("fileName");
+
+      dropArea.addEventListener("click", (e) => {
+        if (e.target.tagName !== "BUTTON") {
+          fileInput.click();
+        }
+      });
+
+      fileInput.addEventListener("change", () => {
+        if (fileInput.files.length > 0) {
+          fileName.innerText = fileInput.files[0].name;
+        }
+      });
+
+      dropArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropArea.classList.add("dragover");
+      });
+
+      dropArea.addEventListener("dragleave", () => {
+        dropArea.classList.remove("dragover");
+      });
+
+      dropArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropArea.classList.remove("dragover");
+        fileInput.files = e.dataTransfer.files;
+        fileName.innerText = e.dataTransfer.files[0].name;
+      });
+
+      function clearResume() {
+        fileInput.value = "";
+        fileName.innerText = "";
+        document.getElementById("score").innerHTML = "";
+        document.getElementById("matched").innerHTML = "";
+        document.getElementById("missing").innerHTML = "";
+      }
+
+      document
+        .getElementById("resumeForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          if (!fileInput.files.length) {
+            alert("Please upload a resume first");
+            return;
+          }
+
+          const formData = new FormData();
+          const adminEmail = localStorage.getItem("userEmail");
+
+          formData.append("file", fileInput.files[0]);
+          formData.append("jobDesc", document.getElementById("jobDesc").value);
+          formData.append("adminEmail", adminEmail);
+
+          const response = await fetch(
+            "http://localhost:8080/api/resume/upload",
+            {
+              method: "POST",
+              body: formData,
+            },
+          );
+
+          const result = await response.json();
+
+          document.getElementById("score").innerHTML =
+            "<b>Resume Email :</b> " +
+            result.resumeEmail +
+            "<br><b>Match Score :</b> " +
+            result.matchScore +
+            "%";
+
+          const matched = document.getElementById("matched");
+          matched.innerHTML = "";
+
+          result.matchedSkills.forEach((skill) => {
+            const li = document.createElement("li");
+            li.classList.add("matched");
+            li.innerText = "✔ " + skill;
+            matched.appendChild(li);
+          });
+
+          const missing = document.getElementById("missing");
+          missing.innerHTML = "";
+
+          result.missingSkills.forEach((skill) => {
+            const li = document.createElement("li");
+            li.classList.add("missing");
+            li.innerText = "✘ " + skill;
+            missing.appendChild(li);
+          });
+        });
+    </script>
+  </body>
+</html>
