@@ -12,40 +12,60 @@ public class Analysis {
 
     private String adminEmail;
 
-    private String resumeEmail;
+    private String candidateEmail;
 
-    private String resumeName;
+    private String candidateName;
+
+    private String location;
+
+    private String degree;
+
+    private String stream;
+
+    private String passoutYear;
 
     private int matchScore;
 
     private String analysisDate;
 
-    @Column(length=1000)
+    @Column(length = 1000)
     private String matchedSkills;
 
-    @Column(length=1000)
+    @Column(length = 1000)
     private String missingSkills;
 
-    public Long getId(){ return id; }
+    public Long getId() { return id; }
 
-    public String getAdminEmail(){ return adminEmail; }
-    public void setAdminEmail(String adminEmail){ this.adminEmail = adminEmail; }
+    public String getAdminEmail() { return adminEmail; }
+    public void setAdminEmail(String adminEmail) { this.adminEmail = adminEmail; }
 
-    public String getResumeEmail(){ return resumeEmail; }
-    public void setResumeEmail(String resumeEmail){ this.resumeEmail = resumeEmail; }
+    public String getCandidateEmail() { return candidateEmail; }
+    public void setCandidateEmail(String candidateEmail) { this.candidateEmail = candidateEmail; }
 
-    public String getResumeName(){ return resumeName; }
-    public void setResumeName(String resumeName){ this.resumeName = resumeName; }
+    public String getCandidateName() { return candidateName; }
+    public void setCandidateName(String candidateName) { this.candidateName = candidateName; }
 
-    public int getMatchScore(){ return matchScore; }
-    public void setMatchScore(int matchScore){ this.matchScore = matchScore; }
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
 
-    public String getAnalysisDate(){ return analysisDate; }
-    public void setAnalysisDate(String analysisDate){ this.analysisDate = analysisDate; }
+    public String getDegree() { return degree; }
+    public void setDegree(String degree) { this.degree = degree; }
 
-    public String getMatchedSkills(){ return matchedSkills; }
-    public void setMatchedSkills(String matchedSkills){ this.matchedSkills = matchedSkills; }
+    public String getStream() { return stream; }
+    public void setStream(String stream) { this.stream = stream; }
 
-    public String getMissingSkills(){ return missingSkills; }
-    public void setMissingSkills(String missingSkills){ this.missingSkills = missingSkills; }
+    public String getPassoutYear() { return passoutYear; }
+    public void setPassoutYear(String passoutYear) { this.passoutYear = passoutYear; }
+
+    public int getMatchScore() { return matchScore; }
+    public void setMatchScore(int matchScore) { this.matchScore = matchScore; }
+
+    public String getAnalysisDate() { return analysisDate; }
+    public void setAnalysisDate(String analysisDate) { this.analysisDate = analysisDate; }
+
+    public String getMatchedSkills() { return matchedSkills; }
+    public void setMatchedSkills(String matchedSkills) { this.matchedSkills = matchedSkills; }
+
+    public String getMissingSkills() { return missingSkills; }
+    public void setMissingSkills(String missingSkills) { this.missingSkills = missingSkills; }
 }

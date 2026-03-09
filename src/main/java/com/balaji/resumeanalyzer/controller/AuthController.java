@@ -1,9 +1,9 @@
 package com.balaji.resumeanalyzer.controller;
 
 import com.balaji.resumeanalyzer.model.User;
-import com.balaji.resumeanalyzer.model.LoginHistory;
+import com.balaji.resumeanalyzer.model.PasswordReset;
 import com.balaji.resumeanalyzer.repository.UserRepository;
-import com.balaji.resumeanalyzer.repository.LoginHistoryRepository;
+import com.balaji.resumeanalyzer.repository.PasswordResetRepository;
 import com.balaji.resumeanalyzer.service.EmailService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,13 +23,12 @@ public class AuthController {
     private UserRepository userRepository;
 
     @Autowired
-    private LoginHistoryRepository loginHistoryRepository;
+    private PasswordResetRepository passwordResetRepository;
 
     @Autowired
     private EmailService emailService;
 
-    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-
+    private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     /* ==============================
        SIGNUP API
@@ -38,18 +37,27 @@ public class AuthController {
     @PostMapping("/signup")
     public String signup(@RequestBody User user){
 
-        User existing = userRepository.findByEmail(user.getEmail());
+        try{
 
-        if(existing != null){
-            return "Email already exists";
+            User existing = userRepository.findByEmail(user.getEmail());
+
+            if(existing != null){
+                return "Email already exists";
+            }
+
+            user.setPassword(encoder.encode(user.getPassword()));
+            user.setRole("USER");
+
+            userRepository.save(user);
+
+            return "Signup Successful";
+
+        }catch(Exception e){
+
+            e.printStackTrace();
+            return "Error during signup";
+
         }
-
-        user.setPassword(encoder.encode(user.getPassword()));
-        user.setRole("USER");
-
-        userRepository.save(user);
-
-        return "Signup Successful";
     }
 
 
@@ -60,24 +68,29 @@ public class AuthController {
     @PostMapping("/login")
     public String login(@RequestBody User loginUser){
 
-        User user = userRepository.findByEmail(loginUser.getEmail());
+        try{
 
-        if(user == null){
-            return "Invalid email";
+            User user = userRepository.findByEmail(loginUser.getEmail());
+
+            if(user == null){
+                return "Invalid email";
+            }
+
+            if(!encoder.matches(loginUser.getPassword(), user.getPassword())){
+                return "Invalid password";
+            }
+
+            user.setLoginTime(LocalDateTime.now().toString());
+            userRepository.save(user);
+
+            return "Login Successful";
+
+        }catch(Exception e){
+
+            e.printStackTrace();
+            return "Login error";
+
         }
-
-        if(!encoder.matches(loginUser.getPassword(), user.getPassword())){
-            return "Invalid password";
-        }
-
-        LoginHistory history = new LoginHistory();
-
-        history.setEmail(user.getEmail());
-        history.setLoginTime(LocalDateTime.now().toString());
-
-        loginHistoryRepository.save(history);
-
-        return "Login Successful";
     }
 
 
@@ -88,32 +101,47 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public String forgotPassword(@RequestParam String email){
 
-        User user = userRepository.findByEmail(email);
+        try{
 
-        if(user == null){
-            return "Email not found";
-        }
+            User user = userRepository.findByEmail(email);
 
-        String otp = String.valueOf(new Random().nextInt(900000) + 100000);
+            if(user == null){
+                return "Email not found";
+            }
 
-        System.out.println("Generated OTP: " + otp); // DEBUG
+            // Generate OTP
+            String otp = String.valueOf(new Random().nextInt(900000) + 100000);
 
-        user.setResetOtp(otp);
+            // Remove previous OTP if exists
+            PasswordReset existingReset = passwordResetRepository.findByEmail(email);
 
-        user.setOtpExpiry(
-                LocalDateTime.now().plusMinutes(5).toString()
-        );
+            if(existingReset != null){
+                passwordResetRepository.delete(existingReset);
+            }
 
-        userRepository.save(user);
+            // Create new OTP record
+            PasswordReset reset = new PasswordReset();
 
-        try {
+            reset.setEmail(email);
+            reset.setOtp(otp);
+
+            reset.setExpiryTime(
+                    LocalDateTime.now().plusMinutes(5).toString()
+            );
+
+            passwordResetRepository.save(reset);
+
+            // Send Email
             emailService.sendOtp(email, otp);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Error sending email";
-        }
 
-        return "OTP sent to email";
+            return "OTP sent to email";
+
+        }catch(Exception e){
+
+            e.printStackTrace();
+            return "Error sending OTP";
+
+        }
     }
 
 
@@ -127,34 +155,44 @@ public class AuthController {
             @RequestParam String otp,
             @RequestParam String newPassword){
 
-        User user = userRepository.findByEmail(email);
+        try{
 
-        if(user == null){
-            return "User not found";
+            PasswordReset reset = passwordResetRepository.findByEmail(email);
+
+            if(reset == null){
+                return "OTP not generated";
+            }
+
+            if(!reset.getOtp().equals(otp)){
+                return "Invalid OTP";
+            }
+
+            LocalDateTime expiryTime = LocalDateTime.parse(reset.getExpiryTime());
+
+            if(LocalDateTime.now().isAfter(expiryTime)){
+                return "OTP expired";
+            }
+
+            User user = userRepository.findByEmail(email);
+
+            if(user == null){
+                return "User not found";
+            }
+
+            user.setPassword(encoder.encode(newPassword));
+            userRepository.save(user);
+
+            // Delete OTP record after password reset
+            passwordResetRepository.delete(reset);
+
+            return "Password reset successful";
+
+        }catch(Exception e){
+
+            e.printStackTrace();
+            return "Error resetting password";
+
         }
-
-        if(user.getResetOtp() == null){
-            return "OTP not generated";
-        }
-
-        if(!user.getResetOtp().equals(otp)){
-            return "Invalid OTP";
-        }
-
-        LocalDateTime expiryTime = LocalDateTime.parse(user.getOtpExpiry());
-
-        if(LocalDateTime.now().isAfter(expiryTime)){
-            return "OTP expired";
-        }
-
-        user.setPassword(encoder.encode(newPassword));
-
-        user.setResetOtp(null);
-        user.setOtpExpiry(null);
-
-        userRepository.save(user);
-
-        return "Password reset successful";
     }
 
 }

@@ -6,7 +6,7 @@
     <style>
       body {
         font-family: Arial;
-        background: #f4f6f9;
+        background: #eef2f7;
         margin: 0;
       }
 
@@ -35,14 +35,12 @@
         position: relative;
         display: inline-block;
         margin-left: 20px;
-        cursor: pointer;
       }
 
       .dropdown {
         display: none;
         position: absolute;
         background: white;
-        min-width: 120px;
         right: 0;
         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         border-radius: 5px;
@@ -55,20 +53,22 @@
         text-decoration: none;
       }
 
-      .dropdown a:hover {
-        background: #f4f4f4;
-      }
-
       .settings:hover .dropdown {
         display: block;
       }
 
-      table {
-        width: 90%;
+      .table-container {
+        width: 95%;
         margin: auto;
+        margin-top: 30px;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        min-width: 1300px;
         border-collapse: collapse;
         background: white;
-        margin-top: 40px;
       }
 
       th {
@@ -82,53 +82,13 @@
         border-bottom: 1px solid #ddd;
       }
 
-      /* ============================= */
-      /* RESPONSIVE DESIGN MEDIA QUERY */
-      /* ============================= */
-
-      /* Tablets */
-      @media (max-width: 1024px) {
-        .navbar {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .nav-links {
-          margin-top: 10px;
-        }
-      }
-
-      /* Mobile Devices */
-      @media (max-width: 768px) {
-        .nav-links {
-          flex-wrap: wrap;
-        }
-
-        .nav-links a {
-          margin-left: 10px;
-          margin-top: 5px;
-        }
-
-        table {
-          width: 100%;
-          font-size: 14px;
-        }
-      }
-
-      /* Small Phones */
-      @media (max-width: 480px) {
-        .navbar {
-          padding: 10px 15px;
-        }
-
-        table {
-          font-size: 12px;
-        }
-
-        th,
-        td {
-          padding: 6px;
-        }
+      button {
+        padding: 6px 10px;
+        background: red;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
       }
     </style>
   </head>
@@ -139,7 +99,6 @@
 
       <div class="nav-links">
         <a href="index.html">Dashboard</a>
-        <a href="admin.html">Admin</a>
 
         <div class="settings">
           <span id="userInfo"></span>
@@ -153,23 +112,48 @@
 
     <h2 style="text-align: center; margin-top: 30px">Admin Dashboard</h2>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Resume Email</th>
-          <th>Resume Name</th>
-          <th>Score</th>
-          <th>Matched</th>
-          <th>Missing</th>
-          <th>Date</th>
-        </tr>
-      </thead>
+    <div style="width: 95%; margin: auto; margin-top: 20px">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search Candidate..."
+        onkeyup="searchCandidate()"
+        style="padding: 8px; width: 250px"
+      />
 
-      <tbody id="tableBody"></tbody>
-    </table>
+      <select id="scoreFilter" onchange="filterScore()" style="padding: 8px">
+        <option value="">All Scores</option>
+        <option value="90">Above 90%</option>
+        <option value="80">Above 80%</option>
+        <option value="70">Above 70%</option>
+        <option value="50">Above 50%</option>
+      </select>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Candidate Email</th>
+            <th>Candidate Name</th>
+            <th>Location</th>
+            <th>Degree</th>
+            <th>Stream</th>
+            <th>Passout Year</th>
+            <th>Score</th>
+            <th>Matched Skills</th>
+            <th>Missing Skills</th>
+            <th>Analyzed Date</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+
+        <tbody id="analysisTable"></tbody>
+      </table>
+    </div>
 
     <script>
-      /* LOGIN PROTECTION ADDED */
       if (!localStorage.getItem("userEmail")) {
         window.location = "login.html";
       }
@@ -179,34 +163,94 @@
 
       document.getElementById("userInfo").innerText = name + " (" + email + ")";
 
-      async function loadData() {
+      async function loadAnalysis() {
         const adminEmail = localStorage.getItem("userEmail");
 
-        const res = await fetch(
+        const response = await fetch(
           "http://localhost:8080/api/admin/analysis?adminEmail=" + adminEmail,
         );
 
-        const data = await res.json();
+        const data = await response.json();
 
-        const table = document.getElementById("tableBody");
+        const table = document.getElementById("analysisTable");
 
         table.innerHTML = "";
 
         data.forEach((a) => {
           table.innerHTML += `
-<tr>
-<td>${a.resumeEmail}</td>
-<td>${a.resumeName}</td>
-<td>${a.matchScore}%</td>
+
+<tr class="analysisRow">
+
+<td>${a.id}</td>
+<td class="email">${a.candidateEmail}</td>
+<td class="name">${a.candidateName}</td>
+<td>${a.location}</td>
+<td>${a.degree}</td>
+<td>${a.stream}</td>
+<td>${a.passoutYear}</td>
+<td class="score">${a.matchScore}</td>
 <td>${a.matchedSkills}</td>
 <td>${a.missingSkills}</td>
 <td>${a.analysisDate}</td>
+
+<td>
+<button onclick="deleteAnalysis('${a.id}',this)">
+Delete
+</button>
+</td>
+
 </tr>
+
 `;
         });
       }
 
-      loadData();
+      loadAnalysis();
+
+      async function deleteAnalysis(id, btn) {
+        if (!confirm("Delete record?")) return;
+
+        await fetch("http://localhost:8080/api/admin/delete/" + id, {
+          method: "DELETE",
+        });
+
+        btn.closest("tr").remove();
+      }
+
+      function searchCandidate() {
+        const input = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+
+        const rows = document.querySelectorAll(".analysisRow");
+
+        rows.forEach((row) => {
+          const email = row.querySelector(".email").innerText.toLowerCase();
+          const name = row.querySelector(".name").innerText.toLowerCase();
+
+          if (email.includes(input) || name.includes(input)) {
+            row.style.display = "";
+          } else {
+            row.style.display = "none";
+          }
+        });
+      }
+
+      function filterScore() {
+        const filter = document.getElementById("scoreFilter").value;
+
+        const rows = document.querySelectorAll(".analysisRow");
+
+        rows.forEach((row) => {
+          const score = parseInt(row.querySelector(".score").innerText);
+
+          if (filter == "" || score >= filter) {
+            row.style.display = "";
+          } else {
+            row.style.display = "none";
+          }
+        });
+      }
     </script>
   </body>
 </html>

@@ -16,17 +16,21 @@ public class AdminController {
     @Autowired
     private AnalysisRepository analysisRepository;
 
-    // NEW METHOD → fetch analysis only for logged in admin
     @GetMapping("/analysis")
     public List<Analysis> getAdminAnalysis(@RequestParam String adminEmail){
 
-        // BACKEND SECURITY CHECK (ADDED)
         if(adminEmail == null || adminEmail.isEmpty()){
             throw new RuntimeException("Unauthorized access");
         }
 
         return analysisRepository.findByAdminEmail(adminEmail);
-
     }
 
+    @DeleteMapping("/delete/{id}")
+    public String deleteAnalysis(@PathVariable Long id){
+
+        analysisRepository.deleteById(id);
+
+        return "Deleted";
+    }
 }

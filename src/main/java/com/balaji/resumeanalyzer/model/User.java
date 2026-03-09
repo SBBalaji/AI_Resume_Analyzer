@@ -12,20 +12,14 @@ public class User {
 
     private String name;
 
-    @Column(unique = true)
+    @Column(unique=true)
     private String email;
 
     private String password;
 
     private String role;
 
-    /* NEW FIELDS ADDED FOR PASSWORD RESET */
-
-    private String resetOtp;
-
-    private String otpExpiry;
-
-    public User(){}
+    private String loginTime;
 
     public Long getId(){
         return id;
@@ -36,7 +30,7 @@ public class User {
     }
 
     public void setName(String name){
-        this.name = name;
+        this.name=name;
     }
 
     public String getEmail(){
@@ -44,7 +38,7 @@ public class User {
     }
 
     public void setEmail(String email){
-        this.email = email;
+        this.email=email;
     }
 
     public String getPassword(){
@@ -52,7 +46,7 @@ public class User {
     }
 
     public void setPassword(String password){
-        this.password = password;
+        this.password=password;
     }
 
     public String getRole(){
@@ -60,24 +54,15 @@ public class User {
     }
 
     public void setRole(String role){
-        this.role = role;
+        this.role=role;
     }
 
-    /* NEW GETTERS AND SETTERS */
-
-    public String getResetOtp(){
-        return resetOtp;
+    public String getLoginTime(){
+        return loginTime;
     }
 
-    public void setResetOtp(String resetOtp){
-        this.resetOtp = resetOtp;
+    public void setLoginTime(String loginTime){
+        this.loginTime=loginTime;
     }
 
-    public String getOtpExpiry(){
-        return otpExpiry;
-    }
-
-    public void setOtpExpiry(String otpExpiry){
-        this.otpExpiry = otpExpiry;
-    }
 }
