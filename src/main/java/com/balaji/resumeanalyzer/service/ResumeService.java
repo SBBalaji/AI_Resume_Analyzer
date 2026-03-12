@@ -358,7 +358,6 @@ public class ResumeService {
         analysisRepository.save(analysis);
 
         Map<String,Object> result = new HashMap<>();
-
         result.put("candidateEmail",analysis.getCandidateEmail());
         result.put("candidateName",analysis.getCandidateName());
         result.put("phone",analysis.getPhone());
@@ -373,6 +372,6 @@ public class ResumeService {
         result.put("matchedSkills",matched);
         result.put("missingSkills",missing);
 
-        return result;
+return result;
     }
 }
