@@ -3,15 +3,23 @@ package com.balaji.resumeanalyzer.service;
 import com.balaji.resumeanalyzer.model.Analysis;
 import com.balaji.resumeanalyzer.repository.AnalysisRepository;
 
+import net.sourceforge.tess4j.ITesseract;
+import net.sourceforge.tess4j.Tesseract;
+
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+
 import java.time.LocalDateTime;
 import java.time.Year;
+
 import java.util.*;
 import java.util.regex.*;
 
@@ -21,9 +29,9 @@ public class ResumeService {
 @Autowired
 private AnalysisRepository analysisRepository;
 
-//////////////////////////////////////////////////////
-// EXTRACT TEXT FROM PDF
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+// TEXT EXTRACTION (PDF + OCR)
+////////////////////////////////////////////////////
 
 public String extractText(MultipartFile file) throws Exception {
 
@@ -32,53 +40,71 @@ PDFTextStripper stripper = new PDFTextStripper();
 
 String text = stripper.getText(document);
 
-document.close();
+if(text.trim().length() < 30){
 
-return text;
+PDFRenderer renderer = new PDFRenderer(document);
+BufferedImage image = renderer.renderImageWithDPI(0, 300);
+
+ITesseract tesseract = new Tesseract();
+tesseract.setDatapath("C:\\Program Files\\Tesseract-OCR\\tessdata");
+
+text = tesseract.doOCR(image);
 
 }
 
-//////////////////////////////////////////////////////
+document.close();
+
+return normalize(text);
+}
+
+////////////////////////////////////////////////////
+// CLEAN TEXT
+////////////////////////////////////////////////////
+
+private String normalize(String text){
+
+text = text.replaceAll("\\r", "\n");
+text = text.replaceAll("\\t", " ");
+text = text.replaceAll(" +", " ");
+
+return text;
+}
+
+////////////////////////////////////////////////////
 // EMAIL
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 
 public String extractEmail(String text){
 
-Pattern pattern =
-Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+");
+Pattern p = Pattern.compile(
+"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+");
 
-Matcher matcher = pattern.matcher(text);
+Matcher m = p.matcher(text);
 
-if(matcher.find()){
-return matcher.group();
-}
+if(m.find()) return m.group();
 
 return "Not Found";
-
 }
 
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 // PHONE
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 
 public String extractPhone(String text){
 
-Pattern pattern =
-Pattern.compile("(\\+91[- ]?)?[6-9]\\d{9}");
+Pattern p = Pattern.compile(
+"(\\+91[- ]?)?[6-9]\\d{9}");
 
-Matcher matcher = pattern.matcher(text);
+Matcher m = p.matcher(text);
 
-if(matcher.find()){
-return matcher.group();
-}
+if(m.find()) return m.group();
 
 return "Unknown";
-
 }
 
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 // NAME
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 
 public String extractName(String text){
 
@@ -88,152 +114,155 @@ for(String line : lines){
 
 line = line.trim();
 
-if(line.length() < 30 &&
-line.matches("[A-Z][a-z]+\\s[A-Z][a-zA-Z]*")){
-
-if(!line.toLowerCase().contains("education")){
+if(line.length() < 35 &&
+line.matches("[A-Z][a-zA-Z]+\\s[A-Z][a-zA-Z]+")){
 return line;
 }
 
 }
 
-}
-
 return "Unknown";
-
 }
 
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 // LOCATION
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 
 public String extractLocation(String text){
 
+String[] cities = {
+"chennai","coimbatore","madurai","salem",
+"tirunelveli","erode","vellore","trichy"
+};
+
 text = text.toLowerCase();
 
-if(text.contains("chennai")) return "Chennai";
-if(text.contains("bangalore")) return "Bangalore";
-if(text.contains("hyderabad")) return "Hyderabad";
-if(text.contains("mumbai")) return "Mumbai";
-if(text.contains("delhi")) return "Delhi";
+for(String city : cities){
 
-return "Unknown";
+if(text.contains(city))
+return city.substring(0,1).toUpperCase() + city.substring(1);
 
 }
 
-//////////////////////////////////////////////////////
+return "Unknown";
+}
+
+////////////////////////////////////////////////////
 // DEGREE
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 
 public String extractDegree(String text){
 
 text = text.toLowerCase();
 
-if(text.contains("b.tech")) return "B.Tech";
-if(text.contains("b.e")) return "B.E";
+if(text.contains("b.tech") || text.contains("btech"))
+return "B.Tech";
+
+if(text.contains("b.e") || text.contains("bachelor of engineering"))
+return "B.E";
+
+if(text.contains("m.tech"))
+return "M.Tech";
 
 return "Unknown";
-
 }
 
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 // STREAM
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 
 public String extractStream(String text){
 
 text = text.toLowerCase();
 
-if(text.contains("artificial intelligence") &&
-text.contains("data science"))
-return "Artificial Intelligence and Data Science";
-
 if(text.contains("computer science"))
 return "Computer Science Engineering";
+
+if(text.contains("artificial intelligence"))
+return "Artificial Intelligence";
+
+if(text.contains("data science"))
+return "Data Science";
 
 if(text.contains("information technology"))
 return "Information Technology";
 
 return "Unknown";
-
 }
 
-//////////////////////////////////////////////////////
-// UNIVERSITY
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+// UNIVERSITY / COLLEGE
+////////////////////////////////////////////////////
 
 public String extractUniversity(String text){
 
-Pattern pattern = Pattern.compile(
+Pattern p = Pattern.compile(
 "([A-Z][A-Za-z .,&-]+(College|University|Institute))",
 Pattern.CASE_INSENSITIVE
 );
 
-Matcher matcher = pattern.matcher(text);
+Matcher m = p.matcher(text);
 
-while(matcher.find()){
+while(m.find()){
 
-String university = matcher.group();
+String uni = m.group();
 
-if(!university.toLowerCase().contains("school")){
-return university;
-}
+if(!uni.toLowerCase().contains("school"))
+return uni;
 
 }
 
 return "Unknown";
-
 }
 
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 // PASSOUT YEAR
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 
 public String extractPassoutYear(String text){
 
-Pattern pattern = Pattern.compile("(20\\d{2})");
-Matcher matcher = pattern.matcher(text);
+Pattern p = Pattern.compile("(20\\d{2})");
+Matcher m = p.matcher(text);
 
-while(matcher.find()){
+int latest = 0;
 
-int year = Integer.parseInt(matcher.group());
+while(m.find()){
 
-if(year >= 2026 && year <= 2035){
-return String.valueOf(year);
+int y = Integer.parseInt(m.group());
+
+if(y > latest)
+latest = y;
 }
 
+if(latest != 0)
+return String.valueOf(latest);
+
+return "Not Defined";
 }
 
-return "2027";
-
-}
-
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 // EXPERIENCE
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 
 public String extractExperience(String text){
 
 text = text.toLowerCase();
 
-if(text.contains("intern")){
+if(text.contains("intern"))
 return "Internship";
-}
 
-Pattern pattern = Pattern.compile("(\\d+)\\s*(years|yrs)");
-Matcher matcher = pattern.matcher(text);
+Pattern p = Pattern.compile("(\\d+)\\s*(years|yrs)");
+Matcher m = p.matcher(text);
 
-if(matcher.find()){
-return matcher.group();
-}
+if(m.find())
+return m.group();
 
 return "0 Years";
-
 }
 
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 // STATUS
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
 
 public String calculateStatus(String passoutYear,String experience){
 
@@ -255,15 +284,13 @@ return "Completed College";
 
 }catch(Exception e){
 
-return "Studying";
-
+return "Unknown";
+}
 }
 
-}
-
-//////////////////////////////////////////////////////
-// ANALYZE SKILLS
-//////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+// SKILL MATCHING
+////////////////////////////////////////////////////
 
 public Map<String,Object> analyzeSkills(
 String resumeText,
@@ -335,7 +362,5 @@ result.put("matchedSkills",matched);
 result.put("missingSkills",missing);
 
 return result;
-
 }
-
 }
