@@ -1,9 +1,7 @@
 package com.balaji.resumeanalyzer.service;
 
 import com.balaji.resumeanalyzer.model.Analysis;
-import com.balaji.resumeanalyzer.model.ResumeDetails;
 import com.balaji.resumeanalyzer.repository.AnalysisRepository;
-import com.balaji.resumeanalyzer.repository.ResumeRepository;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -20,358 +18,324 @@ import java.util.regex.*;
 @Service
 public class ResumeService {
 
-    @Autowired
-    private AnalysisRepository analysisRepository;
+@Autowired
+private AnalysisRepository analysisRepository;
 
-    @Autowired
-    private ResumeRepository resumeRepository;
+//////////////////////////////////////////////////////
+// EXTRACT TEXT FROM PDF
+//////////////////////////////////////////////////////
 
-    // =====================================
-    // Extract Text from PDF
-    // =====================================
-    public String extractText(MultipartFile file) throws Exception {
+public String extractText(MultipartFile file) throws Exception {
 
-        if (!file.getContentType().equals("application/pdf")) {
-            throw new RuntimeException("Only PDF files allowed");
-        }
+PDDocument document = PDDocument.load(file.getInputStream());
+PDFTextStripper stripper = new PDFTextStripper();
 
-        PDDocument document = PDDocument.load(file.getInputStream());
-        PDFTextStripper stripper = new PDFTextStripper();
-        String text = stripper.getText(document);
-        document.close();
+String text = stripper.getText(document);
 
-        return text;
-    }
+document.close();
 
-    // =====================================
-    // Extract Email
-    // =====================================
-    public String extractEmail(String text){
+return text;
 
-        Pattern pattern = Pattern.compile(
-                "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}");
+}
 
-        Matcher matcher = pattern.matcher(text);
+//////////////////////////////////////////////////////
+// EMAIL
+//////////////////////////////////////////////////////
 
-        if(matcher.find()){
-            return matcher.group();
-        }
+public String extractEmail(String text){
 
-        return "Not Found";
-    }
+Pattern pattern =
+Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+");
 
-    // =====================================
-    // Extract Phone
-    // =====================================
-    public String extractPhone(String text){
+Matcher matcher = pattern.matcher(text);
 
-        Pattern pattern = Pattern.compile("(\\+91[- ]?)?[6-9]\\d{9}");
+if(matcher.find()){
+return matcher.group();
+}
 
-        Matcher matcher = pattern.matcher(text);
+return "Not Found";
 
-        if(matcher.find()){
-            return matcher.group();
-        }
+}
 
-        return "Unknown";
-    }
+//////////////////////////////////////////////////////
+// PHONE
+//////////////////////////////////////////////////////
 
-    // =====================================
-    // Extract Name
-    // =====================================
-    public String extractName(String text){
+public String extractPhone(String text){
 
-        Pattern pattern = Pattern.compile("([A-Z][a-z]+\\s[A-Z][a-z]+)");
+Pattern pattern =
+Pattern.compile("(\\+91[- ]?)?[6-9]\\d{9}");
 
-        Matcher matcher = pattern.matcher(text);
+Matcher matcher = pattern.matcher(text);
 
-        while(matcher.find()){
+if(matcher.find()){
+return matcher.group();
+}
 
-            String name = matcher.group();
+return "Unknown";
 
-            if(name.length() < 30){
-                return name;
-            }
-        }
+}
 
-        String[] lines = text.split("\n");
+//////////////////////////////////////////////////////
+// NAME
+//////////////////////////////////////////////////////
 
-        for(String line : lines){
+public String extractName(String text){
 
-            line = line.trim();
+String[] lines = text.split("\n");
 
-            if(line.length() < 40 &&
-               line.matches("[A-Z][a-z]+\\s[A-Z][a-z]+.*")){
-                return line;
-            }
-        }
+for(String line : lines){
 
-        if(lines.length > 0){
-            return lines[0].trim();
-        }
+line = line.trim();
 
-        return "Unknown";
-    }
+if(line.length() < 30 &&
+line.matches("[A-Z][a-z]+\\s[A-Z][a-zA-Z]*")){
 
-    // =====================================
-    // Extract Location
-    // =====================================
-    public String extractLocation(String text){
+if(!line.toLowerCase().contains("education")){
+return line;
+}
 
-        text = text.toLowerCase();
+}
 
-        if(text.contains("chennai")) return "Chennai";
-        if(text.contains("bangalore")) return "Bangalore";
-        if(text.contains("hyderabad")) return "Hyderabad";
-        if(text.contains("mumbai")) return "Mumbai";
-        if(text.contains("delhi")) return "Delhi";
-        if(text.contains("madurai")) return "Madurai";
+}
 
-        return "Unknown";
-    }
+return "Unknown";
 
-    // =====================================
-    // Extract Degree
-    // =====================================
-    public String extractDegree(String text){
+}
 
-        text = text.toLowerCase();
+//////////////////////////////////////////////////////
+// LOCATION
+//////////////////////////////////////////////////////
 
-        if(text.contains("bachelor of engineering") || text.contains("b.e") || text.contains("be "))
-            return "B.E";
+public String extractLocation(String text){
 
-        if(text.contains("bachelor of technology") || text.contains("b.tech") || text.contains("btech"))
-            return "B.Tech";
+text = text.toLowerCase();
 
-        if(text.contains("master of engineering") || text.contains("m.e"))
-            return "M.E";
+if(text.contains("chennai")) return "Chennai";
+if(text.contains("bangalore")) return "Bangalore";
+if(text.contains("hyderabad")) return "Hyderabad";
+if(text.contains("mumbai")) return "Mumbai";
+if(text.contains("delhi")) return "Delhi";
 
-        if(text.contains("master of technology") || text.contains("m.tech"))
-            return "M.Tech";
+return "Unknown";
 
-        if(text.contains("bachelor of science") || text.contains("b.sc") || text.contains("bsc"))
-            return "B.Sc";
+}
 
-        if(text.contains("master of science") || text.contains("m.sc") || text.contains("msc"))
-            return "M.Sc";
+//////////////////////////////////////////////////////
+// DEGREE
+//////////////////////////////////////////////////////
 
-        if(text.contains("bca"))
-            return "BCA";
+public String extractDegree(String text){
 
-        if(text.contains("mca"))
-            return "MCA";
+text = text.toLowerCase();
 
-        if(text.contains("mba"))
-            return "MBA";
+if(text.contains("b.tech")) return "B.Tech";
+if(text.contains("b.e")) return "B.E";
 
-        return "Unknown";
-    }
+return "Unknown";
 
-    // =====================================
-    // Extract Stream
-    // =====================================
-    public String extractStream(String text){
+}
 
-        text = text.toLowerCase();
+//////////////////////////////////////////////////////
+// STREAM
+//////////////////////////////////////////////////////
 
-        if(text.contains("artificial intelligence") && text.contains("data science"))
-            return "Artificial Intelligence and Data Science";
+public String extractStream(String text){
 
-        if(text.contains("information technology"))
-            return "Information Technology";
+text = text.toLowerCase();
 
-        if(text.contains("computer science"))
-            return "Computer Science";
+if(text.contains("artificial intelligence") &&
+text.contains("data science"))
+return "Artificial Intelligence and Data Science";
 
-        if(text.contains("electronics"))
-            return "Electronics";
+if(text.contains("computer science"))
+return "Computer Science Engineering";
 
-        return "Unknown";
-    }
+if(text.contains("information technology"))
+return "Information Technology";
 
-    // =====================================
-    // Extract University
-    // =====================================
-    public String extractUniversity(String text){
+return "Unknown";
 
-        Pattern pattern = Pattern.compile(
-                "([A-Z][A-Za-z .,&-]+(College|University|Institute))",
-                Pattern.CASE_INSENSITIVE
-        );
+}
 
-        Matcher matcher = pattern.matcher(text);
+//////////////////////////////////////////////////////
+// UNIVERSITY
+//////////////////////////////////////////////////////
 
-        while(matcher.find()){
+public String extractUniversity(String text){
 
-            String university = matcher.group().trim().toLowerCase();
+Pattern pattern = Pattern.compile(
+"([A-Z][A-Za-z .,&-]+(College|University|Institute))",
+Pattern.CASE_INSENSITIVE
+);
 
-            if(university.contains("school")){
-                continue;
-            }
+Matcher matcher = pattern.matcher(text);
 
-            return matcher.group().trim();
-        }
+while(matcher.find()){
 
-        return "Unknown";
-    }
+String university = matcher.group();
 
-    // =====================================
-    // Extract Passout Year
-    // =====================================
-    public String extractPassoutYear(String text){
+if(!university.toLowerCase().contains("school")){
+return university;
+}
 
-        Pattern pattern = Pattern.compile("(19|20)\\d{2}");
-        Matcher matcher = pattern.matcher(text);
+}
 
-        int latestYear = 0;
+return "Unknown";
 
-        while(matcher.find()){
+}
 
-            int year = Integer.parseInt(matcher.group());
+//////////////////////////////////////////////////////
+// PASSOUT YEAR
+//////////////////////////////////////////////////////
 
-            if(year > latestYear){
-                latestYear = year;
-            }
-        }
+public String extractPassoutYear(String text){
 
-        if(latestYear != 0){
-            return String.valueOf(latestYear);
-        }
+Pattern pattern = Pattern.compile("(20\\d{2})");
+Matcher matcher = pattern.matcher(text);
 
-        return "Not Defined";
-    }
+while(matcher.find()){
 
-    // =====================================
-    // Extract Experience
-    // =====================================
-    public String extractExperience(String text){
+int year = Integer.parseInt(matcher.group());
 
-        Pattern pattern = Pattern.compile("(\\d+)\\+?\\s*(years|yrs)");
-        Matcher matcher = pattern.matcher(text.toLowerCase());
+if(year >= 2026 && year <= 2035){
+return String.valueOf(year);
+}
 
-        if(matcher.find()){
-            return matcher.group();
-        }
+}
 
-        return "0 Years";
-    }
+return "2027";
 
-    // =====================================
-    // Calculate Status
-    // =====================================
-    public String calculateStatus(String passoutYear,String experience){
+}
 
-        try{
+//////////////////////////////////////////////////////
+// EXPERIENCE
+//////////////////////////////////////////////////////
 
-            int currentYear = Year.now().getValue();
-            int year = Integer.parseInt(passoutYear);
+public String extractExperience(String text){
 
-            if(year > currentYear)
-                return "Studying";
+text = text.toLowerCase();
 
-            if(year == currentYear)
-                return "Final Year";
+if(text.contains("intern")){
+return "Internship";
+}
 
-            if(!experience.equals("0 Years"))
-                return "Working Professional";
+Pattern pattern = Pattern.compile("(\\d+)\\s*(years|yrs)");
+Matcher matcher = pattern.matcher(text);
 
-            return "Completed College";
+if(matcher.find()){
+return matcher.group();
+}
 
-        }catch(Exception e){
+return "0 Years";
 
-            return "Studying";
-        }
-    }
+}
 
-    // =====================================
-    // Analyze Skills
-    // =====================================
-    public Map<String,Object> analyzeSkills(
-            String resumeText,
-            String jobDesc,
-            String adminEmail,
-            String resumeName){
+//////////////////////////////////////////////////////
+// STATUS
+//////////////////////////////////////////////////////
 
-        List<String> jobSkills =
-                Arrays.asList(jobDesc.toLowerCase().split(","));
+public String calculateStatus(String passoutYear,String experience){
 
-        List<String> matched = new ArrayList<>();
-        List<String> missing = new ArrayList<>();
+try{
 
-        for(String skill : jobSkills){
+int currentYear = Year.now().getValue();
+int year = Integer.parseInt(passoutYear);
 
-            if(resumeText.toLowerCase().contains(skill.trim())){
-                matched.add(skill.trim());
-            }
-            else{
-                missing.add(skill.trim());
-            }
-        }
+if(year > currentYear)
+return "Studying";
 
-        int score = (matched.size()*100)/jobSkills.size();
+if(year == currentYear)
+return "Final Year";
 
-        String passoutYear = extractPassoutYear(resumeText);
-        String experience = extractExperience(resumeText);
-        String status = calculateStatus(passoutYear,experience);
+if(!experience.equals("0 Years"))
+return "Working Professional";
 
-        // ===============================
-        // Save Resume Details
-        // ===============================
-        ResumeDetails resume = new ResumeDetails();
+return "Completed College";
 
-        resume.setCandidateName(extractName(resumeText));
-        resume.setEmail(extractEmail(resumeText));
-        resume.setPhone(extractPhone(resumeText));
-        resume.setLocation(extractLocation(resumeText));
+}catch(Exception e){
 
-        resume.setDegree(extractDegree(resumeText));
-        resume.setStream(extractStream(resumeText));
-        resume.setUniversity(extractUniversity(resumeText));
+return "Studying";
 
-        resume.setPassoutYear(passoutYear);
-        resume.setExperience(experience);
-        resume.setCurrentStatus(status);
+}
 
-        resumeRepository.save(resume);
+}
 
-        // ===============================
-        // Save Analysis
-        // ===============================
-        Analysis analysis = new Analysis();
+//////////////////////////////////////////////////////
+// ANALYZE SKILLS
+//////////////////////////////////////////////////////
 
-        analysis.setAdminEmail(adminEmail);
-        analysis.setCandidateEmail(resume.getEmail());
-        analysis.setCandidateName(resume.getCandidateName());
-        analysis.setPhone(resume.getPhone());
-        analysis.setLocation(resume.getLocation());
-        analysis.setDegree(resume.getDegree());
-        analysis.setStream(resume.getStream());
-        analysis.setUniversity(resume.getUniversity());
-        analysis.setPassoutYear(passoutYear);
-        analysis.setExperience(experience);
-        analysis.setCurrentStatus(status);
-        analysis.setMatchScore(score);
-        analysis.setMatchedSkills(String.join(",",matched));
-        analysis.setMissingSkills(String.join(",",missing));
-        analysis.setAnalysisDate(LocalDateTime.now().toString());
+public Map<String,Object> analyzeSkills(
+String resumeText,
+String jobDesc,
+String adminEmail,
+String resumeName){
 
-        analysisRepository.save(analysis);
+List<String> jobSkills =
+Arrays.asList(jobDesc.toLowerCase().split(","));
 
-        Map<String,Object> result = new HashMap<>();
-        result.put("candidateEmail",analysis.getCandidateEmail());
-        result.put("candidateName",analysis.getCandidateName());
-        result.put("phone",analysis.getPhone());
-        result.put("location",analysis.getLocation());
-        result.put("degree",analysis.getDegree());
-        result.put("stream",analysis.getStream());
-        result.put("university",analysis.getUniversity());
-        result.put("passoutYear",analysis.getPassoutYear());
-        result.put("experience",analysis.getExperience());
-        result.put("currentStatus",analysis.getCurrentStatus());
-        result.put("matchScore",analysis.getMatchScore());
-        result.put("matchedSkills",matched);
-        result.put("missingSkills",missing);
+List<String> matched = new ArrayList<>();
+List<String> missing = new ArrayList<>();
+
+for(String skill : jobSkills){
+
+if(resumeText.toLowerCase().contains(skill.trim()))
+matched.add(skill.trim());
+else
+missing.add(skill.trim());
+
+}
+
+int score = (matched.size()*100)/jobSkills.size();
+
+String passoutYear = extractPassoutYear(resumeText);
+String experience = extractExperience(resumeText);
+String status = calculateStatus(passoutYear,experience);
+
+Analysis analysis = new Analysis();
+
+analysis.setAdminEmail(adminEmail);
+analysis.setCandidateEmail(extractEmail(resumeText));
+analysis.setCandidateName(extractName(resumeText));
+analysis.setPhone(extractPhone(resumeText));
+analysis.setLocation(extractLocation(resumeText));
+analysis.setDegree(extractDegree(resumeText));
+analysis.setStream(extractStream(resumeText));
+analysis.setUniversity(extractUniversity(resumeText));
+
+analysis.setPassoutYear(passoutYear);
+analysis.setExperience(experience);
+analysis.setCurrentStatus(status);
+
+analysis.setMatchScore(score);
+
+analysis.setMatchedSkills(String.join(",",matched));
+analysis.setMissingSkills(String.join(",",missing));
+
+analysis.setAnalysisDate(
+LocalDateTime.now().toString()
+);
+
+analysisRepository.save(analysis);
+
+Map<String,Object> result = new HashMap<>();
+
+result.put("candidateEmail",analysis.getCandidateEmail());
+result.put("candidateName",analysis.getCandidateName());
+result.put("phone",analysis.getPhone());
+result.put("location",analysis.getLocation());
+result.put("degree",analysis.getDegree());
+result.put("stream",analysis.getStream());
+result.put("university",analysis.getUniversity());
+result.put("passoutYear",analysis.getPassoutYear());
+result.put("experience",analysis.getExperience());
+result.put("currentStatus",analysis.getCurrentStatus());
+result.put("matchScore",analysis.getMatchScore());
+result.put("matchedSkills",matched);
+result.put("missingSkills",missing);
 
 return result;
-    }
+
+}
+
 }
