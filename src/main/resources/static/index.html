@@ -125,6 +125,7 @@
       .matched {
         color: green;
       }
+
       .missing {
         color: red;
       }
@@ -140,10 +141,13 @@
 
   <body>
     <div class="navbar">
-      <div><b>AI Resume Analyzer</b></div>
+      <div>
+        <b>AI Resume Analyzer</b>
+      </div>
 
       <div class="nav-links">
         <a href="index.html">Dashboard</a>
+
         <a href="admin.html">Admin</a>
 
         <div class="settings">
@@ -163,11 +167,11 @@
         <form id="resumeForm">
           <div class="upload-area" id="dropArea">
             <p>Drag & Drop Resume Here</p>
+
             <p>Recommended: Upload PDF resume</p>
 
             <input type="file" id="file" hidden />
 
-            <!-- FIXED BUTTON -->
             <button type="button" onclick="chooseFile(event)">
               Choose File
             </button>
@@ -198,9 +202,11 @@
         <h3>Skill Analysis</h3>
 
         <h4>Matched Skills</h4>
+
         <ul id="matched" class="result-list"></ul>
 
         <h4>Missing Skills</h4>
+
         <ul id="missing" class="result-list"></ul>
       </div>
     </div>
@@ -219,14 +225,12 @@
       const dropArea = document.getElementById("dropArea");
       const fileName = document.getElementById("fileName");
 
-      // FIXED CLICK HANDLER
       dropArea.addEventListener("click", (e) => {
         if (e.target.tagName !== "BUTTON") {
           fileInput.click();
         }
       });
 
-      // BUTTON CLICK FIX
       function chooseFile(event) {
         event.stopPropagation();
 
@@ -261,7 +265,9 @@
           const formData = new FormData();
 
           formData.append("file", fileInput.files[0]);
+
           formData.append("jobDesc", document.getElementById("jobDesc").value);
+
           formData.append("adminEmail", localStorage.getItem("userEmail"));
 
           const response = await fetch(
@@ -293,11 +299,14 @@
             result.university +
             "<br><b>Experience :</b> " +
             result.experience +
+            "<br><b>Status :</b> " +
+            result.currentStatus +
             "<br><b>Match Score :</b> " +
             result.matchScore +
             "%";
 
           const matched = document.getElementById("matched");
+
           matched.innerHTML = "";
 
           result.matchedSkills.forEach((skill) => {
@@ -311,6 +320,7 @@
           });
 
           const missing = document.getElementById("missing");
+
           missing.innerHTML = "";
 
           result.missingSkills.forEach((skill) => {

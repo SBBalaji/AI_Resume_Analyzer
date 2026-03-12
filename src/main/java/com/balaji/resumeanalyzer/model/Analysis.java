@@ -24,6 +24,10 @@ public class Analysis {
 
     private String passoutYear;
 
+    private String experience;
+
+    private String currentStatus;
+
     private int matchScore;
 
     private String analysisDate;
@@ -56,6 +60,12 @@ public class Analysis {
 
     public String getPassoutYear() { return passoutYear; }
     public void setPassoutYear(String passoutYear) { this.passoutYear = passoutYear; }
+
+    public String getExperience() { return experience; }
+    public void setExperience(String experience) { this.experience = experience; }
+
+    public String getCurrentStatus() { return currentStatus; }
+    public void setCurrentStatus(String currentStatus) { this.currentStatus = currentStatus; }
 
     public int getMatchScore() { return matchScore; }
     public void setMatchScore(int matchScore) { this.matchScore = matchScore; }

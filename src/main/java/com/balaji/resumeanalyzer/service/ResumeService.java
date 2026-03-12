@@ -19,9 +19,9 @@ public class ResumeService {
     @Autowired
     private AnalysisRepository analysisRepository;
 
-    // ==============================
-    // Extract text from PDF
-    // ==============================
+    // =====================================
+    // Extract Text from PDF
+    // =====================================
     public String extractText(MultipartFile file) throws Exception {
 
         if (!file.getContentType().equals("application/pdf")) {
@@ -29,6 +29,7 @@ public class ResumeService {
         }
 
         PDDocument document = PDDocument.load(file.getInputStream());
+
         PDFTextStripper stripper = new PDFTextStripper();
 
         String text = stripper.getText(document);
@@ -38,9 +39,9 @@ public class ResumeService {
         return text;
     }
 
-    // ==============================
+    // =====================================
     // Extract Email
-    // ==============================
+    // =====================================
     public String extractEmail(String text){
 
         Pattern pattern = Pattern.compile(
@@ -52,12 +53,12 @@ public class ResumeService {
             return matcher.group();
         }
 
-        return "not_found";
+        return "Not Found";
     }
 
-    // ==============================
+    // =====================================
     // Extract Phone Number
-    // ==============================
+    // =====================================
     public String extractPhone(String text){
 
         Pattern pattern = Pattern.compile("(\\+91[- ]?)?[6-9]\\d{9}");
@@ -71,9 +72,9 @@ public class ResumeService {
         return "Unknown";
     }
 
-    // ==============================
+    // =====================================
     // Extract Name
-    // ==============================
+    // =====================================
     public String extractName(String text){
 
         String[] lines = text.split("\n");
@@ -85,9 +86,9 @@ public class ResumeService {
         return "Unknown";
     }
 
-    // ==============================
+    // =====================================
     // Extract Location
-    // ==============================
+    // =====================================
     public String extractLocation(String text){
 
         text = text.toLowerCase();
@@ -101,45 +102,41 @@ public class ResumeService {
         return "Unknown";
     }
 
-    // ==============================
+    // =====================================
     // Extract University
-    // ==============================
+    // =====================================
     public String extractUniversity(String text){
 
-    Pattern pattern = Pattern.compile(
-        "([A-Z][A-Za-z .,&-]+(College|University|Institute))",
-        Pattern.CASE_INSENSITIVE
-    );
+        Pattern pattern = Pattern.compile(
+                "([A-Z][A-Za-z .,&-]+(College|University|Institute))",
+                Pattern.CASE_INSENSITIVE
+        );
 
-    Matcher matcher = pattern.matcher(text);
+        Matcher matcher = pattern.matcher(text);
 
-    while(matcher.find()){
+        while(matcher.find()){
 
-        String university = matcher.group().trim().toLowerCase();
+            String university = matcher.group().trim().toLowerCase();
 
-        // Skip school names
-        if(university.contains("school")){
-            continue;
+            if(university.contains("school")){
+                continue;
+            }
+
+            if(university.contains("college") || university.contains("university")){
+                return matcher.group().trim();
+            }
+
+            if(university.contains("institute")){
+                return matcher.group().trim();
+            }
         }
 
-        // Prefer College or University
-        if(university.contains("college") || university.contains("university")){
-            return matcher.group().trim();
-        }
-
-        // Accept institute if college/university not found
-        if(university.contains("institute")){
-            return matcher.group().trim();
-        }
-
+        return "Unknown";
     }
 
-    return "Unknown";
-}
-
-    // ==============================
-    // Degree Detection
-    // ==============================
+    // =====================================
+    // Extract Degree
+    // =====================================
     public String extractDegree(String text){
 
         text = text.toLowerCase();
@@ -174,9 +171,9 @@ public class ResumeService {
         return "Unknown";
     }
 
-    // ==============================
-    // Stream Detection
-    // ==============================
+    // =====================================
+    // Extract Stream
+    // =====================================
     public String extractStream(String text){
 
         text = text.toLowerCase();
@@ -208,38 +205,36 @@ public class ResumeService {
         return "Unknown";
     }
 
-    // ==============================
+    // =====================================
     // Extract Passout Year
-    // ==============================
+    // =====================================
     public String extractYear(String text){
 
-    Pattern pattern = Pattern.compile("(19|20)\\d{2}");
+        Pattern pattern = Pattern.compile("(19|20)\\d{2}");
 
-    Matcher matcher = pattern.matcher(text);
+        Matcher matcher = pattern.matcher(text);
 
-    int latestYear = 0;
+        int latestYear = 0;
 
-    while(matcher.find()){
+        while(matcher.find()){
 
-        int year = Integer.parseInt(matcher.group());
+            int year = Integer.parseInt(matcher.group());
 
-        // choose latest realistic graduation year
-        if(year > latestYear && year <= java.time.Year.now().getValue()){
-            latestYear = year;
+            if(year > latestYear && year <= java.time.Year.now().getValue()){
+                latestYear = year;
+            }
         }
 
+        if(latestYear != 0){
+            return String.valueOf(latestYear);
+        }
+
+        return "Not Defined";
     }
 
-    if(latestYear != 0){
-        return String.valueOf(latestYear);
-    }
-
-    return "Unknown";
-}
-
-    // ==============================
+    // =====================================
     // Extract Experience
-    // ==============================
+    // =====================================
     public String extractExperience(String text){
 
         Pattern pattern = Pattern.compile("(\\d+)\\+?\\s*(years|yrs)");
@@ -253,9 +248,9 @@ public class ResumeService {
         return "0 Years";
     }
 
-    // ==============================
+    // =====================================
     // Analyze Skills
-    // ==============================
+    // =====================================
     public Map<String,Object> analyzeSkills(
             String resumeText,
             String jobDesc,
@@ -279,42 +274,86 @@ public class ResumeService {
 
         int percentage = (matched.size()*100)/jobSkills.size();
 
+        String passoutYear = extractYear(resumeText);
+        String experience = extractExperience(resumeText);
+
+        String status = "Not Defined";
+
+        try{
+
+            int currentYear = java.time.Year.now().getValue();
+            int year = Integer.parseInt(passoutYear.replaceAll("[^0-9]",""));
+
+            if(year > currentYear){
+                status = "Studying";
+            }
+            else if(year == currentYear){
+                status = "Final Year";
+            }
+            else{
+
+                if(!experience.equals("0 Years")){
+                    status = "Working Professional";
+                }
+                else{
+                    status = "Completed College";
+                }
+            }
+
+        }catch(Exception e){
+            status = "Not Defined";
+        }
+
         Analysis analysis = new Analysis();
 
         analysis.setAdminEmail(adminEmail);
 
-        String email = extractEmail(resumeText);
-
-        analysis.setCandidateEmail(email);
+        analysis.setCandidateEmail(extractEmail(resumeText));
         analysis.setCandidateName(extractName(resumeText));
+
         analysis.setLocation(extractLocation(resumeText));
+
         analysis.setDegree(extractDegree(resumeText));
         analysis.setStream(extractStream(resumeText));
-        analysis.setPassoutYear(extractYear(resumeText));
+
+        analysis.setPassoutYear(passoutYear);
+
+        analysis.setExperience(experience);
+
+        analysis.setCurrentStatus(status);
 
         analysis.setMatchScore(percentage);
 
         analysis.setMatchedSkills(String.join(",",matched));
         analysis.setMissingSkills(String.join(",",missing));
 
-        String date = java.time.LocalDateTime.now().toString();
-        analysis.setAnalysisDate(date);
+        analysis.setAnalysisDate(
+                java.time.LocalDateTime.now().toString()
+        );
 
         analysisRepository.save(analysis);
 
         Map<String,Object> result = new HashMap<>();
 
-        result.put("candidateEmail",email);
+        result.put("candidateEmail",extractEmail(resumeText));
         result.put("candidateName",extractName(resumeText));
         result.put("location",extractLocation(resumeText));
+
         result.put("degree",extractDegree(resumeText));
         result.put("stream",extractStream(resumeText));
-        result.put("passoutYear",extractYear(resumeText));
-        result.put("phone",extractPhone(resumeText));
+
         result.put("university",extractUniversity(resumeText));
-        result.put("experience",extractExperience(resumeText));
+
+        result.put("passoutYear",passoutYear);
+
+        result.put("experience",experience);
+
+        result.put("currentStatus",status);
+
+        result.put("phone",extractPhone(resumeText));
 
         result.put("matchScore",percentage);
+
         result.put("matchedSkills",matched);
         result.put("missingSkills",missing);
 
