@@ -147,7 +147,6 @@
 
       <div class="nav-links">
         <a href="index.html">Dashboard</a>
-
         <a href="admin.html">Admin</a>
 
         <div class="settings">
@@ -167,7 +166,6 @@
         <form id="resumeForm">
           <div class="upload-area" id="dropArea">
             <p>Drag & Drop Resume Here</p>
-
             <p>Recommended: Upload PDF resume</p>
 
             <input type="file" id="file" hidden />
@@ -202,11 +200,9 @@
         <h3>Skill Analysis</h3>
 
         <h4>Matched Skills</h4>
-
         <ul id="matched" class="result-list"></ul>
 
         <h4>Missing Skills</h4>
-
         <ul id="missing" class="result-list"></ul>
       </div>
     </div>
@@ -233,7 +229,6 @@
 
       function chooseFile(event) {
         event.stopPropagation();
-
         fileInput.click();
       }
 
@@ -265,9 +260,7 @@
           const formData = new FormData();
 
           formData.append("file", fileInput.files[0]);
-
           formData.append("jobDesc", document.getElementById("jobDesc").value);
-
           formData.append("adminEmail", localStorage.getItem("userEmail"));
 
           const response = await fetch(
@@ -300,36 +293,28 @@
             "<br><b>Experience :</b> " +
             result.experience +
             "<br><b>Status :</b> " +
-            result.currentStatus +
+            result.status +
             "<br><b>Match Score :</b> " +
             result.matchScore +
             "%";
 
           const matched = document.getElementById("matched");
-
           matched.innerHTML = "";
 
           result.matchedSkills.forEach((skill) => {
             const li = document.createElement("li");
-
             li.classList.add("matched");
-
             li.innerText = "✔ " + skill;
-
             matched.appendChild(li);
           });
 
           const missing = document.getElementById("missing");
-
           missing.innerHTML = "";
 
           result.missingSkills.forEach((skill) => {
             const li = document.createElement("li");
-
             li.classList.add("missing");
-
             li.innerText = "✘ " + skill;
-
             missing.appendChild(li);
           });
         });

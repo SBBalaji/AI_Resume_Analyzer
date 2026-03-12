@@ -66,7 +66,7 @@
 
       table {
         width: 100%;
-        min-width: 1300px;
+        min-width: 1600px;
         border-collapse: collapse;
         background: white;
       }
@@ -137,10 +137,14 @@
             <th>ID</th>
             <th>Candidate Email</th>
             <th>Candidate Name</th>
+            <th>Phone</th>
             <th>Location</th>
             <th>Degree</th>
             <th>Stream</th>
+            <th>University</th>
+            <th>CGPA</th>
             <th>Passout Year</th>
+            <th>Status</th>
             <th>Score</th>
             <th>Matched Skills</th>
             <th>Missing Skills</th>
@@ -174,20 +178,24 @@
 
         const table = document.getElementById("analysisTable");
 
-        table.innerHTML = "";
+        let html = "";
 
         data.forEach((a) => {
-          table.innerHTML += `
+          html += `
 
 <tr class="analysisRow">
 
 <td>${a.id}</td>
 <td class="email">${a.candidateEmail}</td>
 <td class="name">${a.candidateName}</td>
+<td>${a.phone}</td>
 <td>${a.location}</td>
 <td>${a.degree}</td>
 <td>${a.stream}</td>
+<td>${a.university}</td>
+<td>${a.cgpa}</td>
 <td>${a.passoutYear}</td>
+<td>${a.currentStatus}</td>
 <td class="score">${a.matchScore}</td>
 <td>${a.matchedSkills}</td>
 <td>${a.missingSkills}</td>
@@ -203,6 +211,8 @@ Delete
 
 `;
         });
+
+        table.innerHTML = html;
       }
 
       loadAnalysis();

@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.time.Year;
 import java.util.*;
 import java.util.regex.*;
 
@@ -57,7 +59,7 @@ public class ResumeService {
     }
 
     // =====================================
-    // Extract Phone Number
+    // Extract Phone
     // =====================================
     public String extractPhone(String text){
 
@@ -79,8 +81,16 @@ public class ResumeService {
 
         String[] lines = text.split("\n");
 
+        for(String line : lines){
+
+            if(line.trim().length() < 40 &&
+               line.matches("[A-Z][a-z]+\\s[A-Z][a-z]+.*")){
+                return line.trim();
+            }
+        }
+
         if(lines.length > 0){
-            return lines[0];
+            return lines[0].trim();
         }
 
         return "Unknown";
@@ -98,38 +108,7 @@ public class ResumeService {
         if(text.contains("hyderabad")) return "Hyderabad";
         if(text.contains("mumbai")) return "Mumbai";
         if(text.contains("delhi")) return "Delhi";
-
-        return "Unknown";
-    }
-
-    // =====================================
-    // Extract University
-    // =====================================
-    public String extractUniversity(String text){
-
-        Pattern pattern = Pattern.compile(
-                "([A-Z][A-Za-z .,&-]+(College|University|Institute))",
-                Pattern.CASE_INSENSITIVE
-        );
-
-        Matcher matcher = pattern.matcher(text);
-
-        while(matcher.find()){
-
-            String university = matcher.group().trim().toLowerCase();
-
-            if(university.contains("school")){
-                continue;
-            }
-
-            if(university.contains("college") || university.contains("university")){
-                return matcher.group().trim();
-            }
-
-            if(university.contains("institute")){
-                return matcher.group().trim();
-            }
-        }
+        if(text.contains("madurai")) return "Madurai";
 
         return "Unknown";
     }
@@ -206,9 +185,41 @@ public class ResumeService {
     }
 
     // =====================================
+    // Extract University
+    // =====================================
+    public String extractUniversity(String text){
+
+        Pattern pattern = Pattern.compile(
+                "([A-Z][A-Za-z .,&-]+(College|University|Institute))",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        Matcher matcher = pattern.matcher(text);
+
+        while(matcher.find()){
+
+            String university = matcher.group().trim().toLowerCase();
+
+            if(university.contains("school")){
+                continue;
+            }
+
+            if(university.contains("college") || university.contains("university")){
+                return matcher.group().trim();
+            }
+
+            if(university.contains("institute")){
+                return matcher.group().trim();
+            }
+        }
+
+        return "Unknown";
+    }
+
+    // =====================================
     // Extract Passout Year
     // =====================================
-    public String extractYear(String text){
+    public String extractPassoutYear(String text){
 
         Pattern pattern = Pattern.compile("(19|20)\\d{2}");
 
@@ -220,7 +231,7 @@ public class ResumeService {
 
             int year = Integer.parseInt(matcher.group());
 
-            if(year > latestYear && year <= java.time.Year.now().getValue()){
+            if(year > latestYear){
                 latestYear = year;
             }
         }
@@ -249,6 +260,37 @@ public class ResumeService {
     }
 
     // =====================================
+    // Calculate Status
+    // =====================================
+    public String calculateStatus(String passoutYear,String experience){
+
+        try{
+
+            int currentYear = Year.now().getValue();
+
+            int year = Integer.parseInt(passoutYear);
+
+            if(year > currentYear){
+                return "Studying";
+            }
+
+            if(year == currentYear){
+                return "Final Year";
+            }
+
+            if(!experience.equals("0 Years")){
+                return "Working Professional";
+            }
+
+            return "Completed College";
+
+        }catch(Exception e){
+
+            return "Not Defined";
+        }
+    }
+
+    // =====================================
     // Analyze Skills
     // =====================================
     public Map<String,Object> analyzeSkills(
@@ -257,7 +299,8 @@ public class ResumeService {
             String adminEmail,
             String resumeName){
 
-        List<String> jobSkills = Arrays.asList(jobDesc.toLowerCase().split(","));
+        List<String> jobSkills =
+                Arrays.asList(jobDesc.toLowerCase().split(","));
 
         List<String> matched = new ArrayList<>();
         List<String> missing = new ArrayList<>();
@@ -272,49 +315,31 @@ public class ResumeService {
             }
         }
 
-        int percentage = (matched.size()*100)/jobSkills.size();
+        int score = (matched.size()*100)/jobSkills.size();
 
-        String passoutYear = extractYear(resumeText);
+        String passoutYear = extractPassoutYear(resumeText);
+
         String experience = extractExperience(resumeText);
 
-        String status = "Not Defined";
-
-        try{
-
-            int currentYear = java.time.Year.now().getValue();
-            int year = Integer.parseInt(passoutYear.replaceAll("[^0-9]",""));
-
-            if(year > currentYear){
-                status = "Studying";
-            }
-            else if(year == currentYear){
-                status = "Final Year";
-            }
-            else{
-
-                if(!experience.equals("0 Years")){
-                    status = "Working Professional";
-                }
-                else{
-                    status = "Completed College";
-                }
-            }
-
-        }catch(Exception e){
-            status = "Not Defined";
-        }
+        String status = calculateStatus(passoutYear,experience);
 
         Analysis analysis = new Analysis();
 
         analysis.setAdminEmail(adminEmail);
 
         analysis.setCandidateEmail(extractEmail(resumeText));
+
         analysis.setCandidateName(extractName(resumeText));
+
+        analysis.setPhone(extractPhone(resumeText));
 
         analysis.setLocation(extractLocation(resumeText));
 
         analysis.setDegree(extractDegree(resumeText));
+
         analysis.setStream(extractStream(resumeText));
+
+        analysis.setUniversity(extractUniversity(resumeText));
 
         analysis.setPassoutYear(passoutYear);
 
@@ -322,39 +347,44 @@ public class ResumeService {
 
         analysis.setCurrentStatus(status);
 
-        analysis.setMatchScore(percentage);
+        analysis.setMatchScore(score);
 
         analysis.setMatchedSkills(String.join(",",matched));
+
         analysis.setMissingSkills(String.join(",",missing));
 
         analysis.setAnalysisDate(
-                java.time.LocalDateTime.now().toString()
+                LocalDateTime.now().toString()
         );
 
         analysisRepository.save(analysis);
 
         Map<String,Object> result = new HashMap<>();
 
-        result.put("candidateEmail",extractEmail(resumeText));
-        result.put("candidateName",extractName(resumeText));
-        result.put("location",extractLocation(resumeText));
+        result.put("candidateEmail",analysis.getCandidateEmail());
 
-        result.put("degree",extractDegree(resumeText));
-        result.put("stream",extractStream(resumeText));
+        result.put("candidateName",analysis.getCandidateName());
 
-        result.put("university",extractUniversity(resumeText));
+        result.put("phone",analysis.getPhone());
 
-        result.put("passoutYear",passoutYear);
+        result.put("location",analysis.getLocation());
 
-        result.put("experience",experience);
+        result.put("degree",analysis.getDegree());
 
-        result.put("currentStatus",status);
+        result.put("stream",analysis.getStream());
 
-        result.put("phone",extractPhone(resumeText));
+        result.put("university",analysis.getUniversity());
 
-        result.put("matchScore",percentage);
+        result.put("passoutYear",analysis.getPassoutYear());
+
+        result.put("experience",analysis.getExperience());
+
+        result.put("currentStatus",analysis.getCurrentStatus());
+
+        result.put("matchScore",analysis.getMatchScore());
 
         result.put("matchedSkills",matched);
+
         result.put("missingSkills",missing);
 
         return result;
