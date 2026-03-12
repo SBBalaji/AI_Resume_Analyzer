@@ -1,7 +1,9 @@
 package com.balaji.resumeanalyzer.service;
 
 import com.balaji.resumeanalyzer.model.Analysis;
+import com.balaji.resumeanalyzer.model.ResumeDetails;
 import com.balaji.resumeanalyzer.repository.AnalysisRepository;
+import com.balaji.resumeanalyzer.repository.ResumeRepository;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -21,6 +23,9 @@ public class ResumeService {
     @Autowired
     private AnalysisRepository analysisRepository;
 
+    @Autowired
+    private ResumeRepository resumeRepository;
+
     // =====================================
     // Extract Text from PDF
     // =====================================
@@ -31,11 +36,8 @@ public class ResumeService {
         }
 
         PDDocument document = PDDocument.load(file.getInputStream());
-
         PDFTextStripper stripper = new PDFTextStripper();
-
         String text = stripper.getText(document);
-
         document.close();
 
         return text;
@@ -79,13 +81,28 @@ public class ResumeService {
     // =====================================
     public String extractName(String text){
 
+        Pattern pattern = Pattern.compile("([A-Z][a-z]+\\s[A-Z][a-z]+)");
+
+        Matcher matcher = pattern.matcher(text);
+
+        while(matcher.find()){
+
+            String name = matcher.group();
+
+            if(name.length() < 30){
+                return name;
+            }
+        }
+
         String[] lines = text.split("\n");
 
         for(String line : lines){
 
-            if(line.trim().length() < 40 &&
+            line = line.trim();
+
+            if(line.length() < 40 &&
                line.matches("[A-Z][a-z]+\\s[A-Z][a-z]+.*")){
-                return line.trim();
+                return line;
             }
         }
 
@@ -157,29 +174,17 @@ public class ResumeService {
 
         text = text.toLowerCase();
 
-        if(text.contains("computer science") || text.contains("cse"))
-            return "Computer Science";
+        if(text.contains("artificial intelligence") && text.contains("data science"))
+            return "Artificial Intelligence and Data Science";
 
-        if(text.contains("information technology") || text.contains("it"))
+        if(text.contains("information technology"))
             return "Information Technology";
 
-        if(text.contains("electronics and communication") || text.contains("ece"))
-            return "Electronics & Communication";
+        if(text.contains("computer science"))
+            return "Computer Science";
 
-        if(text.contains("electrical") || text.contains("eee"))
-            return "Electrical Engineering";
-
-        if(text.contains("mechanical"))
-            return "Mechanical Engineering";
-
-        if(text.contains("civil"))
-            return "Civil Engineering";
-
-        if(text.contains("artificial intelligence"))
-            return "Artificial Intelligence";
-
-        if(text.contains("data science"))
-            return "Data Science";
+        if(text.contains("electronics"))
+            return "Electronics";
 
         return "Unknown";
     }
@@ -204,13 +209,7 @@ public class ResumeService {
                 continue;
             }
 
-            if(university.contains("college") || university.contains("university")){
-                return matcher.group().trim();
-            }
-
-            if(university.contains("institute")){
-                return matcher.group().trim();
-            }
+            return matcher.group().trim();
         }
 
         return "Unknown";
@@ -222,7 +221,6 @@ public class ResumeService {
     public String extractPassoutYear(String text){
 
         Pattern pattern = Pattern.compile("(19|20)\\d{2}");
-
         Matcher matcher = pattern.matcher(text);
 
         int latestYear = 0;
@@ -249,7 +247,6 @@ public class ResumeService {
     public String extractExperience(String text){
 
         Pattern pattern = Pattern.compile("(\\d+)\\+?\\s*(years|yrs)");
-
         Matcher matcher = pattern.matcher(text.toLowerCase());
 
         if(matcher.find()){
@@ -267,26 +264,22 @@ public class ResumeService {
         try{
 
             int currentYear = Year.now().getValue();
-
             int year = Integer.parseInt(passoutYear);
 
-            if(year > currentYear){
+            if(year > currentYear)
                 return "Studying";
-            }
 
-            if(year == currentYear){
+            if(year == currentYear)
                 return "Final Year";
-            }
 
-            if(!experience.equals("0 Years")){
+            if(!experience.equals("0 Years"))
                 return "Working Professional";
-            }
 
             return "Completed College";
 
         }catch(Exception e){
 
-            return "Not Defined";
+            return "Studying";
         }
     }
 
@@ -318,73 +311,66 @@ public class ResumeService {
         int score = (matched.size()*100)/jobSkills.size();
 
         String passoutYear = extractPassoutYear(resumeText);
-
         String experience = extractExperience(resumeText);
-
         String status = calculateStatus(passoutYear,experience);
 
+        // ===============================
+        // Save Resume Details
+        // ===============================
+        ResumeDetails resume = new ResumeDetails();
+
+        resume.setCandidateName(extractName(resumeText));
+        resume.setEmail(extractEmail(resumeText));
+        resume.setPhone(extractPhone(resumeText));
+        resume.setLocation(extractLocation(resumeText));
+
+        resume.setDegree(extractDegree(resumeText));
+        resume.setStream(extractStream(resumeText));
+        resume.setUniversity(extractUniversity(resumeText));
+
+        resume.setPassoutYear(passoutYear);
+        resume.setExperience(experience);
+        resume.setCurrentStatus(status);
+
+        resumeRepository.save(resume);
+
+        // ===============================
+        // Save Analysis
+        // ===============================
         Analysis analysis = new Analysis();
 
         analysis.setAdminEmail(adminEmail);
-
-        analysis.setCandidateEmail(extractEmail(resumeText));
-
-        analysis.setCandidateName(extractName(resumeText));
-
-        analysis.setPhone(extractPhone(resumeText));
-
-        analysis.setLocation(extractLocation(resumeText));
-
-        analysis.setDegree(extractDegree(resumeText));
-
-        analysis.setStream(extractStream(resumeText));
-
-        analysis.setUniversity(extractUniversity(resumeText));
-
+        analysis.setCandidateEmail(resume.getEmail());
+        analysis.setCandidateName(resume.getCandidateName());
+        analysis.setPhone(resume.getPhone());
+        analysis.setLocation(resume.getLocation());
+        analysis.setDegree(resume.getDegree());
+        analysis.setStream(resume.getStream());
+        analysis.setUniversity(resume.getUniversity());
         analysis.setPassoutYear(passoutYear);
-
         analysis.setExperience(experience);
-
         analysis.setCurrentStatus(status);
-
         analysis.setMatchScore(score);
-
         analysis.setMatchedSkills(String.join(",",matched));
-
         analysis.setMissingSkills(String.join(",",missing));
-
-        analysis.setAnalysisDate(
-                LocalDateTime.now().toString()
-        );
+        analysis.setAnalysisDate(LocalDateTime.now().toString());
 
         analysisRepository.save(analysis);
 
         Map<String,Object> result = new HashMap<>();
 
         result.put("candidateEmail",analysis.getCandidateEmail());
-
         result.put("candidateName",analysis.getCandidateName());
-
         result.put("phone",analysis.getPhone());
-
         result.put("location",analysis.getLocation());
-
         result.put("degree",analysis.getDegree());
-
         result.put("stream",analysis.getStream());
-
         result.put("university",analysis.getUniversity());
-
         result.put("passoutYear",analysis.getPassoutYear());
-
         result.put("experience",analysis.getExperience());
-
         result.put("currentStatus",analysis.getCurrentStatus());
-
         result.put("matchScore",analysis.getMatchScore());
-
         result.put("matchedSkills",matched);
-
         result.put("missingSkills",missing);
 
         return result;
