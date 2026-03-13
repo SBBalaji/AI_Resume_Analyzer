@@ -3,16 +3,16 @@ package com.balaji.resumeanalyzer.service;
 import com.balaji.resumeanalyzer.model.Analysis;
 import com.balaji.resumeanalyzer.repository.AnalysisRepository;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -21,7 +21,8 @@ import java.time.LocalDateTime;
 import java.time.Year;
 
 import java.util.*;
-import java.util.regex.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 @Service
 public class ResumeService {
@@ -35,26 +36,32 @@ private AnalysisRepository analysisRepository;
 
 public String extractText(MultipartFile file) throws Exception {
 
-PDDocument document = PDDocument.load(file.getInputStream());
-PDFTextStripper stripper = new PDFTextStripper();
+    PDDocument document = PDDocument.load(file.getInputStream());
 
-String text = stripper.getText(document);
+    PDFTextStripper stripper = new PDFTextStripper();
+    String text = stripper.getText(document);
 
-if(text.trim().length() < 30){
+    if(text.trim().length() < 30){
 
-PDFRenderer renderer = new PDFRenderer(document);
-BufferedImage image = renderer.renderImageWithDPI(0, 300);
+        PDFRenderer renderer = new PDFRenderer(document);
 
-ITesseract tesseract = new Tesseract();
-tesseract.setDatapath("C:\\Program Files\\Tesseract-OCR\\tessdata");
+        ITesseract tesseract = new Tesseract();
+        tesseract.setDatapath("C:\\Program Files\\Tesseract-OCR\\tessdata");
 
-text = tesseract.doOCR(image);
+        StringBuilder ocrText = new StringBuilder();
 
-}
+        for(int i = 0; i < document.getNumberOfPages(); i++){
 
-document.close();
+            BufferedImage image = renderer.renderImageWithDPI(i,300);
+            ocrText.append(tesseract.doOCR(image));
+        }
 
-return normalize(text);
+        text = ocrText.toString();
+    }
+
+    document.close();
+
+    return normalize(text);
 }
 
 ////////////////////////////////////////////////////
@@ -92,14 +99,16 @@ return "Not Found";
 
 public String extractPhone(String text){
 
-Pattern p = Pattern.compile(
-"(\\+91[- ]?)?[6-9]\\d{9}");
+    Pattern p = Pattern.compile(
+        "(\\+91[ -]?)?[6-9]\\d{4}[ -]?\\d{5}"
+    );
 
-Matcher m = p.matcher(text);
+    Matcher m = p.matcher(text);
 
-if(m.find()) return m.group();
+    if(m.find())
+        return m.group();
 
-return "Unknown";
+    return "Unknown";
 }
 
 ////////////////////////////////////////////////////
@@ -114,8 +123,12 @@ for(String line : lines){
 
 line = line.trim();
 
-if(line.length() < 35 &&
-line.matches("[A-Z][a-zA-Z]+\\s[A-Z][a-zA-Z]+")){
+if(line.length() < 40 &&
+!line.toLowerCase().contains("resume") &&
+!line.toLowerCase().contains("email") &&
+!line.toLowerCase().contains("phone") &&
+line.matches("^[A-Za-z .]{3,40}$"))
+{
 return line;
 }
 
@@ -153,66 +166,121 @@ return "Unknown";
 
 public String extractDegree(String text){
 
-text = text.toLowerCase();
+    text = text.toLowerCase();
 
-if(text.contains("b.tech") || text.contains("btech"))
-return "B.Tech";
+    Map<String,String> degrees = new LinkedHashMap<>();
 
-if(text.contains("b.e") || text.contains("bachelor of engineering"))
-return "B.E";
+    // Engineering
+    degrees.put("b.tech","B.Tech");
+    degrees.put("b.e","B.E");
+    degrees.put("m.tech","M.Tech");
+    degrees.put("m.e","M.E");
 
-if(text.contains("m.tech"))
-return "M.Tech";
+    // Arts & Science
+    degrees.put("b.sc","B.Sc");
+    degrees.put("m.sc","M.Sc");
+    degrees.put("b.a","B.A");
+    degrees.put("m.a","M.A");
+    degrees.put("b.com","B.Com");
+    degrees.put("m.com","M.Com");
+    degrees.put("bba","BBA");
+    degrees.put("mba","MBA");
 
-return "Unknown";
+    // Medical
+    degrees.put("mbbs","MBBS");
+    degrees.put("md","MD");
+    degrees.put("ms","MS");
+    degrees.put("bds","BDS");
+    degrees.put("b.pharm","B.Pharm");
+    degrees.put("m.pharm","M.Pharm");
+
+    // Law
+    degrees.put("llb","LLB");
+    degrees.put("llm","LLM");
+
+    // Others
+    degrees.put("phd","PhD");
+    degrees.put("diploma","Diploma");
+    degrees.put("polytechnic","Polytechnic");
+    degrees.put("iti","ITI");
+
+    for(String key : degrees.keySet()){
+
+        if(text.contains(key))
+            return degrees.get(key);
+    }
+
+    return "Undefined";
 }
-
 ////////////////////////////////////////////////////
 // STREAM
 ////////////////////////////////////////////////////
 
 public String extractStream(String text){
 
-text = text.toLowerCase();
+    text = text.toLowerCase();
 
-if(text.contains("computer science"))
-return "Computer Science Engineering";
+    Map<String,String> streams = new LinkedHashMap<>();
 
-if(text.contains("artificial intelligence"))
-return "Artificial Intelligence";
+    // Engineering streams
+    streams.put("computer science","Computer Science");
+    streams.put("information technology","Information Technology");
+    streams.put("artificial intelligence","Artificial Intelligence");
+    streams.put("data science","Data Science");
+    streams.put("electronics","Electronics");
+    streams.put("electrical","Electrical Engineering");
+    streams.put("mechanical","Mechanical Engineering");
+    streams.put("civil","Civil Engineering");
 
-if(text.contains("data science"))
-return "Data Science";
+    // Science streams
+    streams.put("physics","Physics");
+    streams.put("chemistry","Chemistry");
+    streams.put("mathematics","Mathematics");
+    streams.put("biology","Biology");
+    streams.put("biotechnology","Biotechnology");
 
-if(text.contains("information technology"))
-return "Information Technology";
+    // Commerce
+    streams.put("commerce","Commerce");
+    streams.put("accounting","Accounting");
+    streams.put("finance","Finance");
 
-return "Unknown";
+    // Medical
+    streams.put("medicine","Medicine");
+    streams.put("pharmacy","Pharmacy");
+
+    // Law
+    streams.put("law","Law");
+
+    for(String key : streams.keySet()){
+
+        if(text.contains(key))
+            return streams.get(key);
+    }
+
+    return "Undefined";
 }
-
 ////////////////////////////////////////////////////
 // UNIVERSITY / COLLEGE
 ////////////////////////////////////////////////////
 
 public String extractUniversity(String text){
 
-Pattern p = Pattern.compile(
-"([A-Z][A-Za-z .,&-]+(College|University|Institute))",
-Pattern.CASE_INSENSITIVE
-);
+    Pattern p = Pattern.compile(
+        "([A-Za-z .,&-]{5,100}(College|University|Institute|School))",
+        Pattern.CASE_INSENSITIVE
+    );
 
-Matcher m = p.matcher(text);
+    Matcher m = p.matcher(text);
 
-while(m.find()){
+    while(m.find()){
 
-String uni = m.group();
+        String uni = m.group().trim();
 
-if(!uni.toLowerCase().contains("school"))
-return uni;
+        if(!uni.toLowerCase().contains("high school"))
+            return uni;
+    }
 
-}
-
-return "Unknown";
+    return "Unknown";
 }
 
 ////////////////////////////////////////////////////
@@ -221,25 +289,27 @@ return "Unknown";
 
 public String extractPassoutYear(String text){
 
-Pattern p = Pattern.compile("(20\\d{2})");
-Matcher m = p.matcher(text);
+    Pattern p = Pattern.compile("(19|20)\\d{2}");
+    Matcher m = p.matcher(text);
 
-int latest = 0;
+    int year = 0;
 
-while(m.find()){
+    while(m.find()){
+        int y = Integer.parseInt(m.group());
 
-int y = Integer.parseInt(m.group());
+        // Accept only realistic graduation years
+        if(y >= 1990 && y <= Year.now().getValue() + 6){
 
-if(y > latest)
-latest = y;
+            if(y > year)
+                year = y;
+        }
+    }
+
+    if(year == 0)
+        return "Undefined";
+
+    return String.valueOf(year);
 }
-
-if(latest != 0)
-return String.valueOf(latest);
-
-return "Not Defined";
-}
-
 ////////////////////////////////////////////////////
 // EXPERIENCE
 ////////////////////////////////////////////////////
@@ -263,31 +333,37 @@ return "0 Years";
 ////////////////////////////////////////////////////
 // STATUS
 ////////////////////////////////////////////////////
-
 public String calculateStatus(String passoutYear,String experience){
 
-try{
+    try{
 
-int currentYear = Year.now().getValue();
-int year = Integer.parseInt(passoutYear);
+        if(passoutYear.equals("Undefined"))
+            return "Undefined";
 
-if(year > currentYear)
-return "Studying";
+        int year = Integer.parseInt(passoutYear);
+        int current = Year.now().getValue();
 
-if(year == currentYear)
-return "Final Year";
+        if(year > current)
+            return "Currently Pursuing";
 
-if(!experience.equals("0 Years"))
-return "Working Professional";
+        if(year == current)
+            return "Final Year";
 
-return "Completed College";
+        if(year < current){
 
-}catch(Exception e){
+            if(!experience.equals("0 Years"))
+                return "Working Professional";
 
-return "Unknown";
+            return "Graduate";
+        }
+
+    }catch(Exception e){
+
+        return "Undefined";
+    }
+
+    return "Undefined";
 }
-}
-
 ////////////////////////////////////////////////////
 // SKILL MATCHING
 ////////////////////////////////////////////////////
