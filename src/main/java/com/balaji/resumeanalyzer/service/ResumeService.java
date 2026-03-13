@@ -117,26 +117,26 @@ public String extractPhone(String text){
 
 public String extractName(String text){
 
-String[] lines = text.split("\n");
+    String[] lines = text.split("\\n");
 
-for(String line : lines){
+    for(String line : lines){
 
-line = line.trim();
+        line = line.trim();
 
-if(line.length() < 40 &&
-!line.toLowerCase().contains("resume") &&
-!line.toLowerCase().contains("email") &&
-!line.toLowerCase().contains("phone") &&
-line.matches("^[A-Za-z .]{3,40}$"))
-{
-return line;
+        // Skip lines containing email or phone
+        if(line.toLowerCase().contains("@") || 
+           line.toLowerCase().contains("phone") ||
+           line.matches(".*\\d.*"))
+            continue;
+
+        // Name pattern: words separated by space
+        if(line.matches("^[A-Za-z]{2,}(\\s[A-Za-z]{1,})+$")){
+            return line;
+        }
+    }
+
+    return "Undefined";
 }
-
-}
-
-return "Unknown";
-}
-
 ////////////////////////////////////////////////////
 // LOCATION
 ////////////////////////////////////////////////////
@@ -168,46 +168,65 @@ public String extractDegree(String text){
 
     text = text.toLowerCase();
 
-    Map<String,String> degrees = new LinkedHashMap<>();
+    Pattern p = Pattern.compile(
+        "\\b(b\\.tech|btech|b\\.e|be|b\\.sc|bsc|b\\.a|ba|b\\.com|bcom|bba|mba|mbbs|llb|phd|m\\.tech|mtech|m\\.e|me|m\\.sc|msc)\\b"
+    );
 
-    // Engineering
-    degrees.put("b.tech","B.Tech");
-    degrees.put("b.e","B.E");
-    degrees.put("m.tech","M.Tech");
-    degrees.put("m.e","M.E");
+    Matcher m = p.matcher(text);
 
-    // Arts & Science
-    degrees.put("b.sc","B.Sc");
-    degrees.put("m.sc","M.Sc");
-    degrees.put("b.a","B.A");
-    degrees.put("m.a","M.A");
-    degrees.put("b.com","B.Com");
-    degrees.put("m.com","M.Com");
-    degrees.put("bba","BBA");
-    degrees.put("mba","MBA");
+    if(m.find()){
 
-    // Medical
-    degrees.put("mbbs","MBBS");
-    degrees.put("md","MD");
-    degrees.put("ms","MS");
-    degrees.put("bds","BDS");
-    degrees.put("b.pharm","B.Pharm");
-    degrees.put("m.pharm","M.Pharm");
+        String degree = m.group();
 
-    // Law
-    degrees.put("llb","LLB");
-    degrees.put("llm","LLM");
+        switch(degree){
 
-    // Others
-    degrees.put("phd","PhD");
-    degrees.put("diploma","Diploma");
-    degrees.put("polytechnic","Polytechnic");
-    degrees.put("iti","ITI");
+            case "b.tech":
+            case "btech":
+                return "B.Tech";
 
-    for(String key : degrees.keySet()){
+            case "b.e":
+            case "be":
+                return "B.E";
 
-        if(text.contains(key))
-            return degrees.get(key);
+            case "b.sc":
+            case "bsc":
+                return "B.Sc";
+
+            case "b.a":
+            case "ba":
+                return "B.A";
+
+            case "b.com":
+            case "bcom":
+                return "B.Com";
+
+            case "bba":
+                return "BBA";
+
+            case "mba":
+                return "MBA";
+
+            case "mbbs":
+                return "MBBS";
+
+            case "llb":
+                return "LLB";
+
+            case "phd":
+                return "PhD";
+
+            case "m.tech":
+            case "mtech":
+                return "M.Tech";
+
+            case "m.e":
+            case "me":
+                return "M.E";
+
+            case "m.sc":
+            case "msc":
+                return "M.Sc";
+        }
     }
 
     return "Undefined";
@@ -351,7 +370,7 @@ public String calculateStatus(String passoutYear,String experience){
 
         if(year < current){
 
-            if(!experience.equals("0 Years"))
+            if(experience != null && !experience.equals("0 Years"))
                 return "Working Professional";
 
             return "Graduate";
