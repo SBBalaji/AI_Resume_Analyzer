@@ -123,14 +123,24 @@ public String extractName(String text){
 
         line = line.trim();
 
-        // Skip lines containing email or phone
-        if(line.toLowerCase().contains("@") || 
-           line.toLowerCase().contains("phone") ||
-           line.matches(".*\\d.*"))
+        // skip empty lines
+        if(line.length() < 3 || line.length() > 30)
             continue;
 
-        // Name pattern: words separated by space
-        if(line.matches("^[A-Za-z]{2,}(\\s[A-Za-z]{1,})+$")){
+        // skip lines containing keywords
+        if(line.toLowerCase().contains("engineering") ||
+           line.toLowerCase().contains("science") ||
+           line.toLowerCase().contains("developer") ||
+           line.toLowerCase().contains("experience") ||
+           line.toLowerCase().contains("objective"))
+            continue;
+
+        // skip lines containing numbers
+        if(line.matches(".*\\d.*"))
+            continue;
+
+        // valid name pattern
+        if(line.matches("^[A-Za-z]{2,}(\\s[A-Za-z]{1,})?$")){
             return line;
         }
     }
@@ -166,27 +176,25 @@ return "Unknown";
 
 public String extractDegree(String text){
 
-    text = text.toLowerCase();
-
     Pattern p = Pattern.compile(
-        "\\b(b\\.tech|btech|b\\.e|be|b\\.sc|bsc|b\\.a|ba|b\\.com|bcom|bba|mba|mbbs|llb|phd|m\\.tech|mtech|m\\.e|me|m\\.sc|msc)\\b"
-    );
+    "\\b(b\\.e|be|b\\.tech|btech|b\\.sc|bsc|b\\.a|ba|b\\.com|bcom|bba|mba|mbbs|llb|m\\.tech|mtech|m\\.e|me|m\\.sc|msc|phd)\\b",
+    Pattern.CASE_INSENSITIVE);
 
     Matcher m = p.matcher(text);
 
     if(m.find()){
 
-        String degree = m.group();
+        String degree = m.group().toLowerCase();
 
         switch(degree){
-
-            case "b.tech":
-            case "btech":
-                return "B.Tech";
 
             case "b.e":
             case "be":
                 return "B.E";
+
+            case "b.tech":
+            case "btech":
+                return "B.Tech";
 
             case "b.sc":
             case "bsc":
@@ -212,9 +220,6 @@ public String extractDegree(String text){
             case "llb":
                 return "LLB";
 
-            case "phd":
-                return "PhD";
-
             case "m.tech":
             case "mtech":
                 return "M.Tech";
@@ -226,6 +231,9 @@ public String extractDegree(String text){
             case "m.sc":
             case "msc":
                 return "M.Sc";
+
+            case "phd":
+                return "PhD";
         }
     }
 
@@ -285,9 +293,8 @@ public String extractStream(String text){
 public String extractUniversity(String text){
 
     Pattern p = Pattern.compile(
-        "([A-Za-z .,&-]{5,100}(College|University|Institute|School))",
-        Pattern.CASE_INSENSITIVE
-    );
+    "([A-Za-z .,&-]{5,100}(College|University|Institute|Technology))",
+    Pattern.CASE_INSENSITIVE);
 
     Matcher m = p.matcher(text);
 
@@ -295,11 +302,11 @@ public String extractUniversity(String text){
 
         String uni = m.group().trim();
 
-        if(!uni.toLowerCase().contains("high school"))
+        if(!uni.toLowerCase().contains("school"))
             return uni;
     }
 
-    return "Unknown";
+    return "Undefined";
 }
 
 ////////////////////////////////////////////////////
@@ -377,7 +384,6 @@ public String calculateStatus(String passoutYear,String experience){
         }
 
     }catch(Exception e){
-
         return "Undefined";
     }
 
