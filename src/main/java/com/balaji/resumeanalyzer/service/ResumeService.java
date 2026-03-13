@@ -119,15 +119,15 @@ public String extractName(String text){
 
     String[] lines = text.split("\\n");
 
-    Set<String> ignoreWords = new HashSet<>(Arrays.asList(
-        "summary","professional","objective","profile",
-        "education","experience","skills","engineering",
-        "science","technology","tamilnadu"
+    Set<String> invalid = new HashSet<>(Arrays.asList(
+        "experience","work","education","summary","objective",
+        "skills","project","profile","internship",
+        "graduate","program","engineering","technology"
     ));
 
-    for(String line : lines){
+    for(int i=0;i<10 && i<lines.length;i++){
 
-        line = line.trim();
+        String line = lines[i].trim();
 
         if(line.length() < 3 || line.length() > 30)
             continue;
@@ -137,12 +137,15 @@ public String extractName(String text){
 
         String lower = line.toLowerCase();
 
-        for(String word : ignoreWords){
-            if(lower.contains(word))
-                line = null;
+        boolean skip = false;
+        for(String word:invalid){
+            if(lower.contains(word)){
+                skip = true;
+                break;
+            }
         }
 
-        if(line == null)
+        if(skip)
             continue;
 
         if(line.matches("^[A-Za-z]{2,}(\\s[A-Za-z]{1,}){1,2}$")){
@@ -178,11 +181,10 @@ return "Unknown";
 ////////////////////////////////////////////////////
 // DEGREE
 ////////////////////////////////////////////////////
-
 public String extractDegree(String text){
 
     Pattern p = Pattern.compile(
-        "\\b(b\\.e|be|b\\.tech|btech|b\\.sc|bsc|b\\.a|ba|b\\.com|bcom|bba|mba|mbbs|llb|m\\.tech|mtech|m\\.e|me|m\\.sc|msc|phd)\\b",
+        "\\b(b\\.?\\s?e|b\\.?\\s?tech|b\\.?\\s?sc|b\\.?\\s?a|b\\.?\\s?com|bba|mba|mbbs|llb|m\\.?\\s?tech|m\\.?\\s?e|m\\.?\\s?sc|phd)\\b",
         Pattern.CASE_INSENSITIVE
     );
 
@@ -190,45 +192,45 @@ public String extractDegree(String text){
 
     if(m.find()){
 
-        String degree = m.group().toLowerCase();
+        String d = m.group().toLowerCase().replace(" ","");
 
-        if(degree.equals("b.e") || degree.equals("be"))
+        if(d.contains("be"))
             return "B.E";
 
-        if(degree.equals("b.tech") || degree.equals("btech"))
+        if(d.contains("btech"))
             return "B.Tech";
 
-        if(degree.equals("b.sc") || degree.equals("bsc"))
+        if(d.contains("bsc"))
             return "B.Sc";
 
-        if(degree.equals("b.a") || degree.equals("ba"))
+        if(d.contains("ba"))
             return "B.A";
 
-        if(degree.equals("b.com") || degree.equals("bcom"))
+        if(d.contains("bcom"))
             return "B.Com";
 
-        if(degree.equals("bba"))
+        if(d.contains("bba"))
             return "BBA";
 
-        if(degree.equals("mba"))
+        if(d.contains("mba"))
             return "MBA";
 
-        if(degree.equals("mbbs"))
+        if(d.contains("mbbs"))
             return "MBBS";
 
-        if(degree.equals("llb"))
+        if(d.contains("llb"))
             return "LLB";
 
-        if(degree.equals("m.tech") || degree.equals("mtech"))
+        if(d.contains("mtech"))
             return "M.Tech";
 
-        if(degree.equals("m.e") || degree.equals("me"))
+        if(d.contains("me"))
             return "M.E";
 
-        if(degree.equals("m.sc") || degree.equals("msc"))
+        if(d.contains("msc"))
             return "M.Sc";
 
-        if(degree.equals("phd"))
+        if(d.contains("phd"))
             return "PhD";
     }
 
