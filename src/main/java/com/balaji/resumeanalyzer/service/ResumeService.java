@@ -119,28 +119,33 @@ public String extractName(String text){
 
     String[] lines = text.split("\\n");
 
+    Set<String> ignoreWords = new HashSet<>(Arrays.asList(
+        "summary","professional","objective","profile",
+        "education","experience","skills","engineering",
+        "science","technology","tamilnadu"
+    ));
+
     for(String line : lines){
 
         line = line.trim();
 
-        // skip empty lines
         if(line.length() < 3 || line.length() > 30)
             continue;
 
-        // skip lines containing keywords
-        if(line.toLowerCase().contains("engineering") ||
-           line.toLowerCase().contains("science") ||
-           line.toLowerCase().contains("developer") ||
-           line.toLowerCase().contains("experience") ||
-           line.toLowerCase().contains("objective"))
-            continue;
-
-        // skip lines containing numbers
         if(line.matches(".*\\d.*"))
             continue;
 
-        // valid name pattern
-        if(line.matches("^[A-Za-z]{2,}(\\s[A-Za-z]{1,})?$")){
+        String lower = line.toLowerCase();
+
+        for(String word : ignoreWords){
+            if(lower.contains(word))
+                line = null;
+        }
+
+        if(line == null)
+            continue;
+
+        if(line.matches("^[A-Za-z]{2,}(\\s[A-Za-z]{1,}){1,2}$")){
             return line;
         }
     }
@@ -177,8 +182,9 @@ return "Unknown";
 public String extractDegree(String text){
 
     Pattern p = Pattern.compile(
-    "\\b(b\\.e|be|b\\.tech|btech|b\\.sc|bsc|b\\.a|ba|b\\.com|bcom|bba|mba|mbbs|llb|m\\.tech|mtech|m\\.e|me|m\\.sc|msc|phd)\\b",
-    Pattern.CASE_INSENSITIVE);
+        "\\b(b\\.e|be|b\\.tech|btech|b\\.sc|bsc|b\\.a|ba|b\\.com|bcom|bba|mba|mbbs|llb|m\\.tech|mtech|m\\.e|me|m\\.sc|msc|phd)\\b",
+        Pattern.CASE_INSENSITIVE
+    );
 
     Matcher m = p.matcher(text);
 
@@ -186,55 +192,44 @@ public String extractDegree(String text){
 
         String degree = m.group().toLowerCase();
 
-        switch(degree){
+        if(degree.equals("b.e") || degree.equals("be"))
+            return "B.E";
 
-            case "b.e":
-            case "be":
-                return "B.E";
+        if(degree.equals("b.tech") || degree.equals("btech"))
+            return "B.Tech";
 
-            case "b.tech":
-            case "btech":
-                return "B.Tech";
+        if(degree.equals("b.sc") || degree.equals("bsc"))
+            return "B.Sc";
 
-            case "b.sc":
-            case "bsc":
-                return "B.Sc";
+        if(degree.equals("b.a") || degree.equals("ba"))
+            return "B.A";
 
-            case "b.a":
-            case "ba":
-                return "B.A";
+        if(degree.equals("b.com") || degree.equals("bcom"))
+            return "B.Com";
 
-            case "b.com":
-            case "bcom":
-                return "B.Com";
+        if(degree.equals("bba"))
+            return "BBA";
 
-            case "bba":
-                return "BBA";
+        if(degree.equals("mba"))
+            return "MBA";
 
-            case "mba":
-                return "MBA";
+        if(degree.equals("mbbs"))
+            return "MBBS";
 
-            case "mbbs":
-                return "MBBS";
+        if(degree.equals("llb"))
+            return "LLB";
 
-            case "llb":
-                return "LLB";
+        if(degree.equals("m.tech") || degree.equals("mtech"))
+            return "M.Tech";
 
-            case "m.tech":
-            case "mtech":
-                return "M.Tech";
+        if(degree.equals("m.e") || degree.equals("me"))
+            return "M.E";
 
-            case "m.e":
-            case "me":
-                return "M.E";
+        if(degree.equals("m.sc") || degree.equals("msc"))
+            return "M.Sc";
 
-            case "m.sc":
-            case "msc":
-                return "M.Sc";
-
-            case "phd":
-                return "PhD";
-        }
+        if(degree.equals("phd"))
+            return "PhD";
     }
 
     return "Undefined";
@@ -293,20 +288,49 @@ public String extractStream(String text){
 public String extractUniversity(String text){
 
     Pattern p = Pattern.compile(
-    "([A-Za-z .,&-]{5,100}(College|University|Institute|Technology))",
-    Pattern.CASE_INSENSITIVE);
+        "([A-Za-z .,&-]{5,120}(College|University|Institute|Technology))",
+        Pattern.CASE_INSENSITIVE
+    );
 
     Matcher m = p.matcher(text);
 
     while(m.find()){
 
-        String uni = m.group().trim();
+        String uni = m.group().trim().toLowerCase();
 
-        if(!uni.toLowerCase().contains("school"))
-            return uni;
+        if(uni.contains("school") ||
+           uni.contains("higher secondary") ||
+           uni.contains("hr sec") ||
+           uni.contains("matric") ||
+           uni.contains("secondary"))
+        {
+            continue;
+        }
+
+        return capitalizeWords(m.group().trim());
     }
 
     return "Undefined";
+}
+
+/////////////////////////////////////////////////
+//Capitalizewords
+/////////////////////////////////////////////////
+
+public String capitalizeWords(String str){
+
+    String[] words = str.split(" ");
+    StringBuilder result = new StringBuilder();
+
+    for(String w : words){
+
+        if(w.length() > 1)
+            result.append(Character.toUpperCase(w.charAt(0)))
+                  .append(w.substring(1).toLowerCase())
+                  .append(" ");
+    }
+
+    return result.toString().trim();
 }
 
 ////////////////////////////////////////////////////
@@ -321,9 +345,9 @@ public String extractPassoutYear(String text){
     int year = 0;
 
     while(m.find()){
+
         int y = Integer.parseInt(m.group());
 
-        // Accept only realistic graduation years
         if(y >= 1990 && y <= Year.now().getValue() + 6){
 
             if(y > year)
