@@ -38,17 +38,6 @@
         width: 350px;
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        animation: fadeIn 0.8s ease;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(30px);
-        }
-        to {
-          opacity: 1;
-        }
       }
 
       h2 {
@@ -56,16 +45,10 @@
         margin-bottom: 25px;
       }
 
-      label {
-        font-weight: bold;
-        font-size: 14px;
-      }
-
       input {
         width: 100%;
         padding: 10px;
-        margin-top: 5px;
-        margin-bottom: 15px;
+        margin: 5px 0 15px;
         border-radius: 5px;
         border: 1px solid #ccc;
       }
@@ -82,7 +65,6 @@
         cursor: pointer;
         font-size: 12px;
         color: #667eea;
-        font-weight: bold;
       }
 
       button {
@@ -93,30 +75,22 @@
         color: white;
         border-radius: 6px;
         cursor: pointer;
-        transition: 0.3s;
-      }
-
-      button:hover {
-        background: #5a67d8;
       }
 
       button:disabled {
         background: gray;
-        cursor: not-allowed;
       }
 
       #loginLoading {
         display: none;
         text-align: center;
         color: #667eea;
-        font-weight: bold;
         margin-top: 10px;
       }
 
       .links {
         text-align: center;
         margin-top: 10px;
-        font-size: 14px;
       }
 
       .links a {
@@ -136,29 +110,16 @@
       <h2>Login</h2>
 
       <form id="loginForm">
-        <label>Email</label>
-        <input
-          id="email"
-          type="email"
-          required
-          placeholder="Enter your email"
-        />
-
-        <label>Password</label>
+        <input id="email" type="email" placeholder="Email" required />
 
         <div class="password-box">
           <input
             id="password"
             type="password"
+            placeholder="Password"
             required
-            placeholder="Enter password"
           />
-          <span
-            class="toggle"
-            onclick="togglePassword('password', 't3')"
-            id="t3"
-            >Show</span
-          >
+          <span class="toggle" onclick="togglePassword()">Show</span>
         </div>
 
         <button id="loginBtn" type="submit">Login</button>
@@ -166,24 +127,17 @@
 
       <p id="loginLoading">Logging in...</p>
 
+      <!-- ✅ COMBINED LINKS -->
       <div class="links">
-        <p>Forgot password? <a href="forgot.html">Reset here</a></p>
-        <p>Don't have account? <a href="signup.html">Signup</a></p>
+        <p><a href="signup.html">Create Account</a></p>
+        <p><a href="forgot.html" style="color: red">Forgot Password?</a></p>
       </div>
     </div>
 
     <script>
-      function togglePassword(id, toggle) {
-        const field = document.getElementById(id);
-        const btn = document.getElementById(toggle);
-
-        if (field.type === "password") {
-          field.type = "text";
-          btn.innerText = "Hide";
-        } else {
-          field.type = "password";
-          btn.innerText = "Show";
-        }
+      function togglePassword() {
+        const field = document.getElementById("password");
+        field.type = field.type === "password" ? "text" : "password";
       }
 
       document.getElementById("loginForm").addEventListener("submit", login);
@@ -195,9 +149,13 @@
         const password = document.getElementById("password").value;
 
         if (!email || !password) {
-          alert("Email and password are required");
+          alert("Enter email and password");
           return;
         }
+
+        const BASE_URL = window.location.origin.includes("127.0.0.1")
+          ? "http://localhost:8080"
+          : window.location.origin;
 
         const btn = document.getElementById("loginBtn");
         const loading = document.getElementById("loginLoading");
@@ -206,35 +164,36 @@
         loading.style.display = "block";
 
         try {
-          const res = await fetch(
-            "https://ai-resume-analyzer-u8mq.onrender.com/api/auth/login",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email, password }),
-            },
-          );
+          const res = await fetch(`${BASE_URL}/api/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
 
-          if (res.ok) {
-            const data = await res.json();
+          const data = await res.json();
 
-            // ✅ STORE USER DATA (YOUR REQUIREMENT)
-            localStorage.setItem("name", data.name);
-            localStorage.setItem("email", data.email);
+          if (data.success) {
+            localStorage.setItem("userName", data.name);
+            localStorage.setItem("userEmail", data.email);
 
-            alert("Login Successful");
-
-            window.location.href = "/dashboard.html";
+            window.location.href = "dashboard.html";
           } else {
-            const text = await res.text();
-            alert(text);
+            alert(data.message || "Invalid login");
           }
         } catch (err) {
-          alert("Server not reachable");
-        } finally {
-          btn.disabled = false;
-          loading.style.display = "none";
+          // 🔥 OFFLINE MODE
+          const storedEmail = localStorage.getItem("userEmail");
+
+          if (storedEmail && storedEmail === email) {
+            alert("Offline Login Success");
+            window.location.href = "dashboard.html";
+          } else {
+            alert("Offline: user not found. Please signup first.");
+          }
         }
+
+        btn.disabled = false;
+        loading.style.display = "none";
       }
     </script>
   </body>

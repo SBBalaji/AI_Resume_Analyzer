@@ -13,6 +13,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Random;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,26 +37,36 @@ public class AuthController {
     ////////////////////////////////////////////////////
 
     @PostMapping("/signup")
-    public String signup(@RequestBody User user){
+    public Map<String, Object> signup(@RequestBody User user){
+
+        Map<String, Object> response = new HashMap<>();
 
         try {
 
             if(user.getEmail() == null || user.getEmail().isEmpty()){
-                return "Email required";
+                response.put("success", false);
+                response.put("message", "Email required");
+                return response;
             }
 
             if(user.getPassword() == null || user.getPassword().length() < 5){
-                return "Password must be 5+ chars";
+                response.put("success", false);
+                response.put("message", "Password must be 5+ chars");
+                return response;
             }
 
             if(user.getName() == null || user.getName().isEmpty()){
-                return "Name required";
+                response.put("success", false);
+                response.put("message", "Name required");
+                return response;
             }
 
             User existing = userRepository.findByEmail(user.getEmail());
 
             if(existing != null){
-                return "Email already exists";
+                response.put("success", false);
+                response.put("message", "Email already exists");
+                return response;
             }
 
             user.setPassword(encoder.encode(user.getPassword()));
@@ -62,13 +74,18 @@ public class AuthController {
 
             userRepository.save(user);
 
-            // 🔥 RETURN USERNAME
-            return user.getName();
+            response.put("success", true);
+            response.put("name", user.getName());
+            response.put("email", user.getEmail());
+
+            return response;
 
         } catch (Exception e) {
 
             e.printStackTrace();
-            return "Server error: " + e.getMessage();
+            response.put("success", false);
+            response.put("message", "Server error: " + e.getMessage());
+            return response;
         }
     }
 
@@ -77,43 +94,59 @@ public class AuthController {
     ////////////////////////////////////////////////////
 
     @PostMapping("/login")
-    public String login(@RequestBody User loginUser){
+    public Map<String, Object> login(@RequestBody User loginUser){
+
+        Map<String, Object> response = new HashMap<>();
 
         try {
 
             if(loginUser.getEmail() == null || loginUser.getEmail().isEmpty()){
-                return "Email required";
+                response.put("success", false);
+                response.put("message", "Email required");
+                return response;
             }
 
             if(loginUser.getPassword() == null || loginUser.getPassword().isEmpty()){
-                return "Password required";
+                response.put("success", false);
+                response.put("message", "Password required");
+                return response;
             }
 
             User user = userRepository.findByEmail(loginUser.getEmail());
 
             if(user == null){
-                return "Invalid email";
+                response.put("success", false);
+                response.put("message", "Invalid email");
+                return response;
             }
 
             if(!encoder.matches(loginUser.getPassword(), user.getPassword())){
-                return "Invalid password";
+                response.put("success", false);
+                response.put("message", "Invalid password");
+                return response;
             }
 
-            // ✅ SAVE LOGIN TIME
+            // SAVE LOGIN TIME
             user.setLoginTime(LocalDateTime.now().toString());
             userRepository.save(user);
 
-            return "Login Successful";
+            response.put("success", true);
+            response.put("name", user.getName());
+            response.put("email", user.getEmail());
+
+            return response;
 
         } catch (Exception e) {
 
             e.printStackTrace();
-            return "Login error: " + e.getMessage();
+            response.put("success", false);
+            response.put("message", "Login error: " + e.getMessage());
+            return response;
         }
     }
 
     ////////////////////////////////////////////////////
-    // FORGOT PASSWORD (OTP)
+    // FORGOT PASSWORD
     ////////////////////////////////////////////////////
 
     @PostMapping("/forgot-password")
@@ -131,17 +164,14 @@ public class AuthController {
                 return "Email not found";
             }
 
-            // ✅ GENERATE OTP
             String otp = String.valueOf(new Random().nextInt(900000) + 100000);
 
-            // ✅ DELETE OLD OTP
             PasswordReset existing = passwordResetRepository.findByEmail(email);
 
             if(existing != null){
                 passwordResetRepository.delete(existing);
             }
 
-            // ✅ SAVE NEW OTP
             PasswordReset reset = new PasswordReset();
             reset.setEmail(email);
             reset.setOtp(otp);
@@ -149,7 +179,6 @@ public class AuthController {
 
             passwordResetRepository.save(reset);
 
-            // ✅ SEND EMAIL
             emailService.sendOtp(email, otp);
 
             return "OTP sent to email";
@@ -206,7 +235,6 @@ public class AuthController {
             user.setPassword(encoder.encode(newPassword));
             userRepository.save(user);
 
-            // ✅ DELETE OTP AFTER SUCCESS
             passwordResetRepository.delete(reset);
 
             return "Password reset successful";

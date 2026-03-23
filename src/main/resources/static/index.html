@@ -184,11 +184,17 @@
       .missing {
         color: red;
       }
+
+      #loading {
+        display: none;
+        color: black;
+        font-weight: bold;
+      }
     </style>
   </head>
 
   <body>
-    <!-- ✅ LOGIN CHECK (THIS IS THE FIX) -->
+    <!-- ✅ LOGIN CHECK -->
     <script>
       const name = localStorage.getItem("userName");
       const email = localStorage.getItem("userEmail");
@@ -225,6 +231,8 @@
           <input id="skills" placeholder="Enter skills (java,python...)" />
 
           <button onclick="analyze()">Analyze</button>
+
+          <p id="loading">Analyzing... please wait</p>
         </div>
       </div>
 
@@ -233,7 +241,6 @@
         <div class="result-box">
           <h3>Email : <span id="email"></span></h3>
 
-          <!-- SCORE -->
           <div class="circle" id="circle">0%</div>
 
           <h3>Match Score : <span id="score"></span>%</h3>
@@ -252,7 +259,6 @@
     <script>
       document.getElementById("userInfo").innerText = name + " (" + email + ")";
 
-      /* DROPDOWN */
       function toggleMenu() {
         let d = document.getElementById("dropdown");
         d.style.display = d.style.display === "block" ? "none" : "block";
@@ -263,7 +269,6 @@
         window.location = "login.html";
       }
 
-      /* ANALYZE */
       function analyze() {
         let file = document.getElementById("file").files[0];
         let skills = document.getElementById("skills").value;
@@ -273,23 +278,30 @@
           return;
         }
 
+        document.getElementById("loading").style.display = "block";
+
+        const BASE_URL = window.location.origin.includes("127.0.0.1")
+          ? "http://localhost:8080"
+          : window.location.origin;
+
         let formData = new FormData();
         formData.append("file", file);
         formData.append("skills", skills);
 
-        fetch("http://localhost:8080/api/resume/upload", {
+        fetch(BASE_URL + "/api/resume/upload", {
           method: "POST",
           body: formData,
         })
           .then((res) => res.json())
           .then((data) => {
+            document.getElementById("loading").style.display = "none";
+
             document.getElementById("email").innerText = data.email || "";
             document.getElementById("score").innerText = data.matchScore || 0;
 
             document.getElementById("downloadBtn").href =
-              "http://localhost:8080/api/resume/download/" + data.id;
+              BASE_URL + "/api/resume/download/" + data.id;
 
-            // 🎯 ANIMATED CIRCLE
             let score = data.matchScore || 0;
             let circle = document.getElementById("circle");
             let current = 0;
@@ -310,9 +322,8 @@
               }
             }, 20);
 
-            // MATCHED
             let matchedHTML = "";
-            data.matchedSkills.forEach((s) => {
+            (data.matchedSkills || []).forEach((s) => {
               matchedHTML += `
               <div class="skill">
                 ✔ ${s}
@@ -328,13 +339,38 @@
               });
             }, 200);
 
-            // MISSING
             let missingHTML = "";
-            data.missingSkills.forEach((s) => {
+            (data.missingSkills || []).forEach((s) => {
               missingHTML += `<p class="missing">✘ ${s}</p>`;
             });
 
             document.getElementById("missing").innerHTML = missingHTML;
+          })
+          .catch(() => {
+            document.getElementById("loading").style.display = "none";
+
+            alert("Offline mode showing demo result");
+
+            let fake = {
+              email: "demo@gmail.com",
+              matchScore: 65,
+              matchedSkills: ["java", "html"],
+              missingSkills: ["react", "aws"],
+            };
+
+            document.getElementById("email").innerText = fake.email;
+            document.getElementById("score").innerText = fake.matchScore;
+
+            let circle = document.getElementById("circle");
+            circle.innerText = fake.matchScore + "%";
+
+            document.getElementById("matched").innerHTML = fake.matchedSkills
+              .map((s) => `<p class="matched">✔ ${s}</p>`)
+              .join("");
+
+            document.getElementById("missing").innerHTML = fake.missingSkills
+              .map((s) => `<p class="missing">✘ ${s}</p>`)
+              .join("");
           });
       }
     </script>
