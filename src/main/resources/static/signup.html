@@ -198,32 +198,37 @@
         loading.style.display = "block";
 
         try {
-          const res = await fetch("http://localhost:8080/api/auth/signup", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, password }),
-          });
+          const res = await fetch(
+            "https://ai-resume-analyzer-u8mq.onrender.com/api/auth/signup",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ name, email, password }),
+            },
+          );
 
-          const text = await res.text();
+          if (res.ok) {
+            const text = await res.text();
 
-          console.log("RESPONSE:", text);
+            // ✅ store user
+            localStorage.setItem("userName", text || name);
+            localStorage.setItem("userEmail", email);
 
-          // ❌ EMAIL EXISTS
-          if (text.includes("already")) {
-            alert("Email exists → redirecting to login");
+            alert("Signup Success");
+
             window.location.href = "login.html";
-            return;
+          } else {
+            const errText = await res.text();
+            alert("Signup Failed: " + errText);
           }
-
-          // ✅ SUCCESS → backend returns username
-          localStorage.setItem("userName", text);
-          localStorage.setItem("userEmail", email);
-
-          alert("Signup successful");
-
-          window.location.href = "login.html";
         } catch (err) {
           alert("Server error");
+          console.error(err);
+        } finally {
+          btn.disabled = false;
+          loading.style.display = "none";
         }
       }
     </script>

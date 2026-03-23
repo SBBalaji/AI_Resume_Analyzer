@@ -188,6 +188,16 @@
   </head>
 
   <body>
+    <!-- ✅ LOGIN CHECK (THIS IS THE FIX) -->
+    <script>
+      const name = localStorage.getItem("userName");
+      const email = localStorage.getItem("userEmail");
+
+      if (!name || !email) {
+        window.location.href = "signup.html";
+      }
+    </script>
+
     <!-- NAVBAR -->
     <div class="navbar">
       <b>🚀 AI Resume Analyzer</b>
@@ -240,9 +250,6 @@
     </div>
 
     <script>
-      const name = localStorage.getItem("userName");
-      const email = localStorage.getItem("userEmail");
-
       document.getElementById("userInfo").innerText = name + " (" + email + ")";
 
       /* DROPDOWN */
@@ -307,10 +314,10 @@
             let matchedHTML = "";
             data.matchedSkills.forEach((s) => {
               matchedHTML += `
-      <div class="skill">
-        ✔ ${s}
-        <div class="bar"><div class="fill"></div></div>
-      </div>`;
+              <div class="skill">
+                ✔ ${s}
+                <div class="bar"><div class="fill"></div></div>
+              </div>`;
             });
 
             document.getElementById("matched").innerHTML = matchedHTML;

@@ -32,7 +32,6 @@
         }
       }
 
-      /* ✅ NEW FADE-IN ANIMATION */
       .container {
         background: white;
         padding: 40px;
@@ -129,20 +128,6 @@
       .links a:hover {
         text-decoration: underline;
       }
-
-      .container {
-        animation: fadeIn 0.8s ease;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-        }
-      }
     </style>
   </head>
 
@@ -221,36 +206,36 @@
         loading.style.display = "block";
 
         try {
-          const res = await fetch("http://localhost:8080/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-          });
+          const res = await fetch(
+            "https://ai-resume-analyzer-u8mq.onrender.com/api/auth/login",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password }),
+            },
+          );
 
-          const text = await res.text();
+          if (res.ok) {
+            const data = await res.json();
 
-          if (text.includes("Login Successful")) {
-            const name = email.split("@")[0];
+            // ✅ STORE USER DATA (YOUR REQUIREMENT)
+            localStorage.setItem("name", data.name);
+            localStorage.setItem("email", data.email);
 
-            localStorage.setItem("userName", name);
-            localStorage.setItem("userEmail", email);
+            alert("Login Successful");
 
-            setTimeout(() => {
-              window.location = "index.html";
-            }, 2000);
+            window.location.href = "/dashboard.html";
           } else {
+            const text = await res.text();
             alert(text);
-            btn.disabled = false;
-            loading.style.display = "none";
           }
         } catch (err) {
           alert("Server not reachable");
+        } finally {
           btn.disabled = false;
           loading.style.display = "none";
         }
       }
-      localStorage.setItem("userName", email.split("@")[0]);
-      localStorage.setItem("userEmail", email);
     </script>
   </body>
 </html>

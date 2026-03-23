@@ -8,6 +8,9 @@
   <body>
     <h2>Resume Skill Dashboard</h2>
 
+    <!-- ✅ USERNAME DISPLAY -->
+    <h3>Welcome: <span id="username"></span></h3>
+
     <form id="resumeForm">
       Resume PDF:
       <input type="file" id="file" required /><br /><br />
@@ -22,62 +25,92 @@
       Email:
       <input type="text" id="email" /><br /><br />
 
-      <button type="submit">Analyze Resume</button>
+      <!-- ✅ BUTTON (FORM SUBMIT WILL HANDLE) -->
+      <button type="submit">Analyze</button>
     </form>
 
     <br /><br />
 
     <canvas id="skillChart"></canvas>
 
+    <!-- ✅ NEW SCRIPT (REPLACED FULLY) -->
     <script>
+      // ✅ USERNAME FIX (based on login storage)
+      document.getElementById("username").innerText =
+        localStorage.getItem("name") || "Guest";
+
       document
         .getElementById("resumeForm")
         .addEventListener("submit", async function (e) {
           e.preventDefault();
 
-          const formData = new FormData();
-          formData.append("file", document.getElementById("file").files[0]);
-          formData.append("jobDesc", document.getElementById("jobDesc").value);
-          formData.append("email", document.getElementById("email").value);
+          try {
+            const fileInput = document.getElementById("file");
 
-          const response = await fetch(
-            "http://localhost:8080/api/resume/upload",
-            {
-              method: "POST",
-              body: formData,
-            },
-          );
+            if (!fileInput.files[0]) {
+              alert("Please upload resume");
+              return;
+            }
 
-          const result = await response.json();
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            formData.append(
+              "jobDesc",
+              document.getElementById("jobDesc").value,
+            );
+            formData.append("email", document.getElementById("email").value);
 
-          const matched = result.matchedSkills;
-          const missing = result.missingSkills;
+            const response = await fetch(
+              "https://ai-resume-analyzer-u8mq.onrender.com/api/resume/upload",
+              {
+                method: "POST",
+                body: formData,
+              },
+            );
 
-          const labels = [...matched, ...missing];
+            if (!response.ok) {
+              throw new Error("Server error");
+            }
 
-          const dataValues = [];
+            const result = await response.json();
 
-          matched.forEach(() => dataValues.push(100));
-          missing.forEach(() => dataValues.push(0));
+            console.log(result);
 
-          const colors = [];
+            const matched = result.matchedSkills || [];
+            const missing = result.missingSkills || [];
 
-          matched.forEach(() => colors.push("green"));
-          missing.forEach(() => colors.push("red"));
+            const labels = [...matched, ...missing];
 
-          new Chart(document.getElementById("skillChart"), {
-            type: "bar",
-            data: {
-              labels: labels,
-              datasets: [
-                {
-                  label: "Skill Match",
-                  data: dataValues,
-                  backgroundColor: colors,
-                },
-              ],
-            },
-          });
+            const dataValues = [];
+            matched.forEach(() => dataValues.push(100));
+            missing.forEach(() => dataValues.push(0));
+
+            const colors = [];
+            matched.forEach(() => colors.push("green"));
+            missing.forEach(() => colors.push("red"));
+
+            // ✅ DESTROY OLD CHART (important fix)
+            if (window.myChart) {
+              window.myChart.destroy();
+            }
+
+            window.myChart = new Chart(document.getElementById("skillChart"), {
+              type: "bar",
+              data: {
+                labels: labels,
+                datasets: [
+                  {
+                    label: "Skill Match",
+                    data: dataValues,
+                    backgroundColor: colors,
+                  },
+                ],
+              },
+            });
+          } catch (err) {
+            alert("Error: " + err.message);
+            console.error(err);
+          }
         });
     </script>
   </body>
