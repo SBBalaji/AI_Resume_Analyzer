@@ -6,140 +6,56 @@ import jakarta.persistence.*;
 @Table(name = "analysis")
 public class Analysis {
 
+    // ======================
+    // PRIMARY KEY
+    // ======================
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String adminEmail;
+    // ======================
+    // MAIN REQUIRED FIELDS
+    // ======================
+    private String email;          // candidate email
 
-    private String candidateEmail;
-    private String candidateName;
+    private int matchScore;        // score
 
-    private String phone;
-    private String location;
+    // ======================
+    // RESUME FILE (DOWNLOAD)
+    // 🔥 FIXED (VERY IMPORTANT)
+    // ======================
+    @Lob
+    @Column(name = "resume_file", columnDefinition = "LONGBLOB")
+    private byte[] resumeFile;
 
-    private String degree;
-    private String stream;
-    private String university;
-
-    private String passoutYear;
-    private String experience;
-    private String currentStatus;
-
-    private String cgpa;
-
-    private int matchScore;
-
+    // ======================
+    // SKILLS
+    // ======================
     @Column(length = 1000)
     private String matchedSkills;
 
     @Column(length = 1000)
     private String missingSkills;
 
+    // ======================
+    // DATE
+    // ======================
     private String analysisDate;
 
     // ======================
-    // GETTERS AND SETTERS
+    // GETTERS & SETTERS
     // ======================
 
     public Long getId() {
         return id;
     }
 
-    public String getAdminEmail() {
-        return adminEmail;
+    public String getEmail() {
+        return email;
     }
 
-    public void setAdminEmail(String adminEmail) {
-        this.adminEmail = adminEmail;
-    }
-
-    public String getCandidateEmail() {
-        return candidateEmail;
-    }
-
-    public void setCandidateEmail(String candidateEmail) {
-        this.candidateEmail = candidateEmail;
-    }
-
-    public String getCandidateName() {
-        return candidateName;
-    }
-
-    public void setCandidateName(String candidateName) {
-        this.candidateName = candidateName;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public String getDegree() {
-        return degree;
-    }
-
-    public void setDegree(String degree) {
-        this.degree = degree;
-    }
-
-    public String getStream() {
-        return stream;
-    }
-
-    public void setStream(String stream) {
-        this.stream = stream;
-    }
-
-    public String getUniversity() {
-        return university;
-    }
-
-    public void setUniversity(String university) {
-        this.university = university;
-    }
-
-    public String getPassoutYear() {
-        return passoutYear;
-    }
-
-    public void setPassoutYear(String passoutYear) {
-        this.passoutYear = passoutYear;
-    }
-
-    public String getExperience() {
-        return experience;
-    }
-
-    public void setExperience(String experience) {
-        this.experience = experience;
-    }
-
-    public String getCurrentStatus() {
-        return currentStatus;
-    }
-
-    public void setCurrentStatus(String currentStatus) {
-        this.currentStatus = currentStatus;
-    }
-
-    public String getCgpa() {
-        return cgpa;
-    }
-
-    public void setCgpa(String cgpa) {
-        this.cgpa = cgpa;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public int getMatchScore() {
@@ -148,6 +64,14 @@ public class Analysis {
 
     public void setMatchScore(int matchScore) {
         this.matchScore = matchScore;
+    }
+
+    public byte[] getResumeFile() {
+        return resumeFile;
+    }
+
+    public void setResumeFile(byte[] resumeFile) {
+        this.resumeFile = resumeFile;
     }
 
     public String getMatchedSkills() {

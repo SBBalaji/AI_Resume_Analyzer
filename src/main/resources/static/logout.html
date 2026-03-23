@@ -4,33 +4,66 @@
     <title>Logout</title>
 
     <style>
-      body {
+      * {
+        box-sizing: border-box;
         font-family: Arial;
-        background: #f4f4f4;
-        text-align: center;
+      }
+
+      /* ✅ UPDATED BODY */
+      body {
         margin: 0;
+        height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        text-align: center;
       }
 
+      /* ✅ CONTAINER WITH ANIMATION */
       .container {
         background: white;
         padding: 40px;
         width: 400px;
-        border-radius: 10px;
-        box-shadow: 0px 0px 10px gray;
+        border-radius: 12px;
+        box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.2);
+        animation: fadeIn 0.8s ease;
+        color: black; /* keep text visible inside white box */
+      }
+
+      /* ✅ FADE-IN ANIMATION */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      h2 {
+        margin-bottom: 10px;
+      }
+
+      p {
+        color: #555;
       }
 
       button {
-        padding: 10px 20px;
-        background: #007bff;
+        padding: 12px 20px;
+        background: #667eea;
         color: white;
         border: none;
-        border-radius: 5px;
+        border-radius: 6px;
         cursor: pointer;
-        margin-top: 15px;
+        margin-top: 20px;
+        transition: 0.3s;
+      }
+
+      button:hover {
+        background: #5a67d8;
       }
     </style>
   </head>

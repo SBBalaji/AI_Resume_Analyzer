@@ -20,12 +20,36 @@
         animation: gradientMove 8s ease infinite;
       }
 
+      @keyframes gradientMove {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      /* ✅ NEW FADE-IN ANIMATION */
       .container {
         background: white;
         padding: 40px;
         width: 350px;
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        animation: fadeIn 0.8s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+        }
       }
 
       h2 {
@@ -33,9 +57,15 @@
         margin-bottom: 25px;
       }
 
+      label {
+        font-weight: bold;
+        font-size: 14px;
+      }
+
       input {
         width: 100%;
         padding: 10px;
+        margin-top: 5px;
         margin-bottom: 15px;
         border-radius: 5px;
         border: 1px solid #ccc;
@@ -64,6 +94,16 @@
         color: white;
         border-radius: 6px;
         cursor: pointer;
+        transition: 0.3s;
+      }
+
+      button:hover {
+        background: #5a67d8;
+      }
+
+      button:disabled {
+        background: gray;
+        cursor: not-allowed;
       }
 
       #loginLoading {
@@ -74,7 +114,6 @@
         margin-top: 10px;
       }
 
-      /* NEW STYLE FOR LINKS */
       .links {
         text-align: center;
         margin-top: 10px;
@@ -90,6 +129,20 @@
       .links a:hover {
         text-decoration: underline;
       }
+
+      .container {
+        animation: fadeIn 0.8s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+        }
+      }
     </style>
   </head>
 
@@ -99,7 +152,12 @@
 
       <form id="loginForm">
         <label>Email</label>
-        <input id="email" required placeholder="Enter your email" />
+        <input
+          id="email"
+          type="email"
+          required
+          placeholder="Enter your email"
+        />
 
         <label>Password</label>
 
@@ -118,12 +176,11 @@
           >
         </div>
 
-        <button type="submit">Login</button>
+        <button id="loginBtn" type="submit">Login</button>
       </form>
 
       <p id="loginLoading">Logging in...</p>
 
-      <!-- NEW FORGOT PASSWORD LINK -->
       <div class="links">
         <p>Forgot password? <a href="forgot.html">Reset here</a></p>
         <p>Don't have account? <a href="signup.html">Signup</a></p>
@@ -149,36 +206,51 @@
       async function login(e) {
         e.preventDefault();
 
-        const email = document.getElementById("email").value;
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
 
-        const data = {
-          email: email,
-          password: document.getElementById("password").value,
-        };
+        if (!email || !password) {
+          alert("Email and password are required");
+          return;
+        }
 
-        const res = await fetch("http://localhost:8080/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
+        const btn = document.getElementById("loginBtn");
+        const loading = document.getElementById("loginLoading");
 
-        const text = await res.text();
+        btn.disabled = true;
+        loading.style.display = "block";
 
-        if (text === "Login Successful") {
-          const name = email.split("@")[0];
+        try {
+          const res = await fetch("http://localhost:8080/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
 
-          localStorage.setItem("userName", name);
-          localStorage.setItem("userEmail", email);
+          const text = await res.text();
 
-          document.getElementById("loginLoading").style.display = "block";
+          if (text.includes("Login Successful")) {
+            const name = email.split("@")[0];
 
-          setTimeout(() => {
-            window.location = "index.html";
-          }, 1500);
-        } else {
-          alert(text);
+            localStorage.setItem("userName", name);
+            localStorage.setItem("userEmail", email);
+
+            setTimeout(() => {
+              window.location = "index.html";
+            }, 2000);
+          } else {
+            alert(text);
+            btn.disabled = false;
+            loading.style.display = "none";
+          }
+        } catch (err) {
+          alert("Server not reachable");
+          btn.disabled = false;
+          loading.style.display = "none";
         }
       }
+      localStorage.setItem("userName", email.split("@")[0]);
+      localStorage.setItem("userEmail", email);
     </script>
   </body>
 </html>

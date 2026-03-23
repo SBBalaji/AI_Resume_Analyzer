@@ -38,6 +38,17 @@
         width: 360px;
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        animation: fadeIn 0.8s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+        }
       }
 
       h2 {
@@ -46,15 +57,14 @@
       }
 
       label {
-        font-size: 14px;
         font-weight: bold;
+        font-size: 14px;
       }
 
       input {
         width: 100%;
         padding: 10px;
-        margin-top: 5px;
-        margin-bottom: 15px;
+        margin: 5px 0 15px;
         border-radius: 5px;
         border: 1px solid #ccc;
       }
@@ -81,7 +91,6 @@
         border: none;
         color: white;
         border-radius: 6px;
-        font-size: 15px;
         cursor: pointer;
       }
 
@@ -91,22 +100,18 @@
 
       .link {
         text-align: center;
-        margin-top: 15px;
-        font-size: 14px;
+        margin-top: 10px;
       }
 
       .link a {
         color: #667eea;
         text-decoration: none;
-        font-weight: bold;
       }
 
       #loadingText {
         display: none;
         text-align: center;
         color: #667eea;
-        font-weight: bold;
-        margin-top: 10px;
       }
     </style>
   </head>
@@ -120,10 +125,9 @@
         <input id="name" required />
 
         <label>Email</label>
-        <input id="email" required />
+        <input id="email" type="email" required />
 
         <label>Password</label>
-
         <div class="password-box">
           <input id="password" type="password" required />
           <span
@@ -135,7 +139,6 @@
         </div>
 
         <label>Confirm Password</label>
-
         <div class="password-box">
           <input id="confirmPassword" type="password" required />
           <span
@@ -146,13 +149,14 @@
           >
         </div>
 
-        <button type="submit">Signup</button>
+        <button id="signupBtn" type="submit">Signup</button>
       </form>
 
-      <p id="loadingText">Signing in...</p>
+      <p id="loadingText">Signing up...</p>
 
       <p class="link">Already have account? <a href="login.html">Login</a></p>
     </div>
+
     <script>
       function togglePassword(id, toggle) {
         const field = document.getElementById(id);
@@ -172,39 +176,54 @@
       async function signup(e) {
         e.preventDefault();
 
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value;
         const confirm = document.getElementById("confirmPassword").value;
+
+        if (!name || !email || !password || !confirm) {
+          alert("All fields required");
+          return;
+        }
 
         if (password !== confirm) {
           alert("Passwords do not match");
           return;
         }
 
-        const data = {
-          name: document.getElementById("name").value,
-          email: document.getElementById("email").value,
-          password: password,
-        };
+        const btn = document.getElementById("signupBtn");
+        const loading = document.getElementById("loadingText");
 
-        const res = await fetch("http://localhost:8080/api/auth/signup", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        });
+        btn.disabled = true;
+        loading.style.display = "block";
 
-        const text = await res.text();
+        try {
+          const res = await fetch("http://localhost:8080/api/auth/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password }),
+          });
 
-        /* FIX ADDED HERE */
-        if (text === "Signup Successful") {
-          document.getElementById("loadingText").style.display = "block";
+          const text = await res.text();
 
-          setTimeout(() => {
-            window.location = "login.html";
-          }, 1500);
-        } else {
-          alert(text);
+          console.log("RESPONSE:", text);
+
+          // ❌ EMAIL EXISTS
+          if (text.includes("already")) {
+            alert("Email exists → redirecting to login");
+            window.location.href = "login.html";
+            return;
+          }
+
+          // ✅ SUCCESS → backend returns username
+          localStorage.setItem("userName", text);
+          localStorage.setItem("userEmail", email);
+
+          alert("Signup successful");
+
+          window.location.href = "login.html";
+        } catch (err) {
+          alert("Server error");
         }
       }
     </script>

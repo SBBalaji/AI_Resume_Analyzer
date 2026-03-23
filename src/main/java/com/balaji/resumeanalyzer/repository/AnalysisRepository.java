@@ -7,8 +7,6 @@ import java.util.List;
 
 public interface AnalysisRepository extends JpaRepository<Analysis, Long> {
 
+    // OPTIONAL: for sorting (useful for admin dashboard)
     List<Analysis> findAllByOrderByMatchScoreDesc();
-
-    List<Analysis> findByAdminEmail(String adminEmail); // NEW
-
 }

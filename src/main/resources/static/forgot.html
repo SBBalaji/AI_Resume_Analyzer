@@ -4,16 +4,22 @@
     <title>Forgot Password</title>
 
     <style>
-      body {
+      * {
+        box-sizing: border-box;
         font-family: Arial;
-        background: #eef2f7;
+      }
+
+      /* ✅ UPDATED BACKGROUND */
+      body {
+        margin: 0;
+        height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
-        margin: 0;
+        background: linear-gradient(135deg, #667eea, #764ba2);
       }
 
+      /* ✅ CONTAINER WITH ANIMATION */
       .container {
         background: white;
         padding: 40px;
@@ -21,6 +27,18 @@
         border-radius: 10px;
         box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.2);
         text-align: center;
+        animation: fadeIn 0.8s ease;
+      }
+
+      /* ✅ FADE-IN EFFECT */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+        }
       }
 
       input {
@@ -39,6 +57,7 @@
         color: white;
         border-radius: 5px;
         cursor: pointer;
+        transition: 0.3s;
       }
 
       button:hover {
@@ -95,13 +114,10 @@
 
         const res = await fetch(
           "http://localhost:8080/api/auth/forgot-password?email=" + email,
-          {
-            method: "POST",
-          },
+          { method: "POST" },
         );
 
         const text = await res.text();
-
         alert(text);
       }
 
@@ -117,13 +133,10 @@
 
         const res = await fetch(
           `http://localhost:8080/api/auth/reset-password?email=${email}&otp=${otp}&newPassword=${newPassword}`,
-          {
-            method: "POST",
-          },
+          { method: "POST" },
         );
 
         const text = await res.text();
-
         alert(text);
 
         if (text === "Password reset successful") {

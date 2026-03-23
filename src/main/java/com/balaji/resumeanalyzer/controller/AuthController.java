@@ -30,14 +30,26 @@ public class AuthController {
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-    /* ==============================
-       SIGNUP API
-       ============================== */
+    ////////////////////////////////////////////////////
+    // SIGNUP
+    ////////////////////////////////////////////////////
 
     @PostMapping("/signup")
     public String signup(@RequestBody User user){
 
-        try{
+        try {
+
+            if(user.getEmail() == null || user.getEmail().isEmpty()){
+                return "Email required";
+            }
+
+            if(user.getPassword() == null || user.getPassword().length() < 5){
+                return "Password must be 5+ chars";
+            }
+
+            if(user.getName() == null || user.getName().isEmpty()){
+                return "Name required";
+            }
 
             User existing = userRepository.findByEmail(user.getEmail());
 
@@ -50,25 +62,32 @@ public class AuthController {
 
             userRepository.save(user);
 
-            return "Signup Successful";
+            // 🔥 RETURN USERNAME
+            return user.getName();
 
-        }catch(Exception e){
+        } catch (Exception e) {
 
             e.printStackTrace();
-            return "Error during signup";
-
+            return "Server error: " + e.getMessage();
         }
     }
 
-
-    /* ==============================
-       LOGIN API
-       ============================== */
+    ////////////////////////////////////////////////////
+    // LOGIN
+    ////////////////////////////////////////////////////
 
     @PostMapping("/login")
     public String login(@RequestBody User loginUser){
 
-        try{
+        try {
+
+            if(loginUser.getEmail() == null || loginUser.getEmail().isEmpty()){
+                return "Email required";
+            }
+
+            if(loginUser.getPassword() == null || loginUser.getPassword().isEmpty()){
+                return "Password required";
+            }
 
             User user = userRepository.findByEmail(loginUser.getEmail());
 
@@ -80,28 +99,31 @@ public class AuthController {
                 return "Invalid password";
             }
 
+            // ✅ SAVE LOGIN TIME
             user.setLoginTime(LocalDateTime.now().toString());
             userRepository.save(user);
 
             return "Login Successful";
 
-        }catch(Exception e){
+        } catch (Exception e) {
 
             e.printStackTrace();
-            return "Login error";
-
+            return "Login error: " + e.getMessage();
         }
     }
 
-
-    /* ==============================
-       FORGOT PASSWORD API
-       ============================== */
+    ////////////////////////////////////////////////////
+    // FORGOT PASSWORD (OTP)
+    ////////////////////////////////////////////////////
 
     @PostMapping("/forgot-password")
     public String forgotPassword(@RequestParam String email){
 
-        try{
+        try {
+
+            if(email == null || email.isEmpty()){
+                return "Email is required";
+            }
 
             User user = userRepository.findByEmail(email);
 
@@ -109,45 +131,39 @@ public class AuthController {
                 return "Email not found";
             }
 
-            // Generate OTP
+            // ✅ GENERATE OTP
             String otp = String.valueOf(new Random().nextInt(900000) + 100000);
 
-            // Remove previous OTP if exists
-            PasswordReset existingReset = passwordResetRepository.findByEmail(email);
+            // ✅ DELETE OLD OTP
+            PasswordReset existing = passwordResetRepository.findByEmail(email);
 
-            if(existingReset != null){
-                passwordResetRepository.delete(existingReset);
+            if(existing != null){
+                passwordResetRepository.delete(existing);
             }
 
-            // Create new OTP record
+            // ✅ SAVE NEW OTP
             PasswordReset reset = new PasswordReset();
-
             reset.setEmail(email);
             reset.setOtp(otp);
-
-            reset.setExpiryTime(
-                    LocalDateTime.now().plusMinutes(5).toString()
-            );
+            reset.setExpiryTime(LocalDateTime.now().plusMinutes(5).toString());
 
             passwordResetRepository.save(reset);
 
-            // Send Email
+            // ✅ SEND EMAIL
             emailService.sendOtp(email, otp);
 
             return "OTP sent to email";
 
-        }catch(Exception e){
+        } catch (Exception e) {
 
             e.printStackTrace();
-            return "Error sending OTP";
-
+            return "Error sending OTP: " + e.getMessage();
         }
     }
 
-
-    /* ==============================
-       RESET PASSWORD API
-       ============================== */
+    ////////////////////////////////////////////////////
+    // RESET PASSWORD
+    ////////////////////////////////////////////////////
 
     @PostMapping("/reset-password")
     public String resetPassword(
@@ -155,7 +171,11 @@ public class AuthController {
             @RequestParam String otp,
             @RequestParam String newPassword){
 
-        try{
+        try {
+
+            if(email == null || otp == null || newPassword == null){
+                return "All fields are required";
+            }
 
             PasswordReset reset = passwordResetRepository.findByEmail(email);
 
@@ -167,9 +187,9 @@ public class AuthController {
                 return "Invalid OTP";
             }
 
-            LocalDateTime expiryTime = LocalDateTime.parse(reset.getExpiryTime());
+            LocalDateTime expiry = LocalDateTime.parse(reset.getExpiryTime());
 
-            if(LocalDateTime.now().isAfter(expiryTime)){
+            if(LocalDateTime.now().isAfter(expiry)){
                 return "OTP expired";
             }
 
@@ -179,20 +199,22 @@ public class AuthController {
                 return "User not found";
             }
 
+            if(newPassword.length() < 5){
+                return "Password must be at least 5 characters";
+            }
+
             user.setPassword(encoder.encode(newPassword));
             userRepository.save(user);
 
-            // Delete OTP record after password reset
+            // ✅ DELETE OTP AFTER SUCCESS
             passwordResetRepository.delete(reset);
 
             return "Password reset successful";
 
-        }catch(Exception e){
+        } catch (Exception e) {
 
             e.printStackTrace();
-            return "Error resetting password";
-
+            return "Error resetting password: " + e.getMessage();
         }
     }
-
 }

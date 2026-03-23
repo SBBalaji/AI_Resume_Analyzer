@@ -5,18 +5,21 @@
 
     <style>
       body {
-        font-family: Arial;
-        background: #eef2f7;
         margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
       }
 
+      /* NAVBAR */
       .navbar {
-        background: #2c3e50;
-        color: white;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
         padding: 15px 30px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
       }
 
       .nav-links {
@@ -29,52 +32,75 @@
         margin-left: 20px;
         text-decoration: none;
         font-weight: bold;
+        transition: 0.3s;
+      }
+
+      .nav-links a:hover {
+        color: #ffd369;
       }
 
       .settings {
         position: relative;
-        display: inline-block;
         margin-left: 20px;
       }
 
       .dropdown {
         display: none;
         position: absolute;
-        background: white;
         right: 0;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        border-radius: 5px;
+        background: white;
+        color: black;
+        border-radius: 6px;
+        overflow: hidden;
       }
 
       .dropdown a {
         display: block;
         padding: 10px;
-        color: black;
         text-decoration: none;
+        color: black;
       }
 
       .settings:hover .dropdown {
         display: block;
       }
 
+      /* FILTER */
+      .filters {
+        width: 95%;
+        margin: 20px auto;
+        display: flex;
+        gap: 10px;
+      }
+
+      input,
+      select {
+        padding: 10px;
+        border-radius: 6px;
+        border: none;
+      }
+
+      /* TABLE */
       .table-container {
         width: 95%;
         margin: auto;
-        margin-top: 30px;
-        overflow-x: auto;
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        color: black;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        animation: fadeIn 0.8s ease;
       }
 
       table {
         width: 100%;
-        min-width: 1600px;
         border-collapse: collapse;
-        background: white;
       }
 
       th {
         background: #667eea;
         color: white;
-        padding: 10px;
+        padding: 12px;
       }
 
       td {
@@ -82,20 +108,46 @@
         border-bottom: 1px solid #ddd;
       }
 
+      tr {
+        transition: 0.3s;
+      }
+
+      tr:hover {
+        background: #f5f7ff;
+        transform: scale(1.01);
+      }
+
+      /* BUTTON */
       button {
-        padding: 6px 10px;
         background: red;
         color: white;
         border: none;
-        border-radius: 4px;
+        padding: 6px 10px;
+        border-radius: 5px;
         cursor: pointer;
+        transition: 0.3s;
+      }
+
+      button:hover {
+        background: #c0392b;
+      }
+
+      /* ANIMATION */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+        }
       }
     </style>
   </head>
 
   <body>
     <div class="navbar">
-      <div><b>AI Resume Analyzer</b></div>
+      <b>🚀 AI Resume Analyzer</b>
 
       <div class="nav-links">
         <a href="index.html">Dashboard</a>
@@ -110,22 +162,19 @@
       </div>
     </div>
 
-    <h2 style="text-align: center; margin-top: 30px">Admin Dashboard</h2>
+    <h2 style="text-align: center">Admin Dashboard</h2>
 
-    <div style="width: 95%; margin: auto; margin-top: 20px">
+    <div class="filters">
       <input
-        type="text"
         id="searchInput"
-        placeholder="Search Candidate..."
+        placeholder="Search Email..."
         onkeyup="searchCandidate()"
-        style="padding: 8px; width: 250px"
       />
 
-      <select id="scoreFilter" onchange="filterScore()" style="padding: 8px">
-        <option value="">All Scores</option>
+      <select id="scoreFilter" onchange="filterScore()">
+        <option value="">All</option>
         <option value="90">Above 90%</option>
         <option value="80">Above 80%</option>
-        <option value="70">Above 70%</option>
         <option value="50">Above 50%</option>
       </select>
     </div>
@@ -135,20 +184,11 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Candidate Email</th>
-            <th>Candidate Name</th>
-            <th>Phone</th>
-            <th>Location</th>
-            <th>Degree</th>
-            <th>Stream</th>
-            <th>University</th>
-            <th>CGPA</th>
-            <th>Passout Year</th>
-            <th>Status</th>
+            <th>Email</th>
             <th>Score</th>
-            <th>Matched Skills</th>
-            <th>Missing Skills</th>
-            <th>Analyzed Date</th>
+            <th>Matched</th>
+            <th>Missing</th>
+            <th>Date</th>
             <th>Delete</th>
           </tr>
         </thead>
@@ -158,109 +198,57 @@
     </div>
 
     <script>
-      if (!localStorage.getItem("userEmail")) {
-        window.location = "login.html";
-      }
-
       const name = localStorage.getItem("userName");
       const email = localStorage.getItem("userEmail");
 
       document.getElementById("userInfo").innerText = name + " (" + email + ")";
 
       async function loadAnalysis() {
-        const adminEmail = localStorage.getItem("userEmail");
-
-        const response = await fetch(
-          "http://localhost:8080/api/admin/analysis?adminEmail=" + adminEmail,
-        );
-
-        const data = await response.json();
-
-        const table = document.getElementById("analysisTable");
+        const res = await fetch("http://localhost:8080/api/admin/all");
+        const data = await res.json();
 
         let html = "";
-
         data.forEach((a) => {
           html += `
-
-<tr class="analysisRow">
-
-<td>${a.id}</td>
-<td class="email">${a.candidateEmail}</td>
-<td class="name">${a.candidateName}</td>
-<td>${a.phone}</td>
-<td>${a.location}</td>
-<td>${a.degree}</td>
-<td>${a.stream}</td>
-<td>${a.university}</td>
-<td>${a.cgpa}</td>
-<td>${a.passoutYear}</td>
-<td>${a.currentStatus}</td>
-<td class="score">${a.matchScore}</td>
-<td>${a.matchedSkills}</td>
-<td>${a.missingSkills}</td>
-<td>${a.analysisDate}</td>
-
-<td>
-<button onclick="deleteAnalysis('${a.id}',this)">
-Delete
-</button>
-</td>
-
-</tr>
-
-`;
+    <tr>
+      <td>${a.id}</td>
+      <td class="email">${a.email}</td>
+      <td class="score">${a.matchScore}%</td>
+      <td>${a.matchedSkills}</td>
+      <td>${a.missingSkills}</td>
+      <td>${a.analysisDate}</td>
+      <td><button onclick="deleteRow(${a.id},this)">Delete</button></td>
+    </tr>`;
         });
 
-        table.innerHTML = html;
+        document.getElementById("analysisTable").innerHTML = html;
       }
 
-      loadAnalysis();
-
-      async function deleteAnalysis(id, btn) {
-        if (!confirm("Delete record?")) return;
-
-        await fetch("http://localhost:8080/api/admin/delete/" + id, {
+      function deleteRow(id, btn) {
+        fetch("http://localhost:8080/api/admin/delete/" + id, {
           method: "DELETE",
         });
-
         btn.closest("tr").remove();
       }
 
       function searchCandidate() {
-        const input = document
-          .getElementById("searchInput")
-          .value.toLowerCase();
-
-        const rows = document.querySelectorAll(".analysisRow");
-
-        rows.forEach((row) => {
-          const email = row.querySelector(".email").innerText.toLowerCase();
-          const name = row.querySelector(".name").innerText.toLowerCase();
-
-          if (email.includes(input) || name.includes(input)) {
-            row.style.display = "";
-          } else {
-            row.style.display = "none";
-          }
+        let val = document.getElementById("searchInput").value.toLowerCase();
+        document.querySelectorAll("tr").forEach((r) => {
+          if (r.innerText.toLowerCase().includes(val)) r.style.display = "";
+          else r.style.display = "none";
         });
       }
 
       function filterScore() {
-        const filter = document.getElementById("scoreFilter").value;
-
-        const rows = document.querySelectorAll(".analysisRow");
-
-        rows.forEach((row) => {
-          const score = parseInt(row.querySelector(".score").innerText);
-
-          if (filter == "" || score >= filter) {
-            row.style.display = "";
-          } else {
-            row.style.display = "none";
-          }
+        let val = document.getElementById("scoreFilter").value;
+        document.querySelectorAll(".score").forEach((td) => {
+          let score = parseInt(td.innerText);
+          td.parentElement.style.display =
+            val == "" || score >= val ? "" : "none";
         });
       }
+
+      loadAnalysis();
     </script>
   </body>
 </html>
