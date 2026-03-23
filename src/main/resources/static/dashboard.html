@@ -13,6 +13,39 @@
         margin: 0;
         background: linear-gradient(135deg, #667eea, #764ba2);
         color: white;
+        overflow: hidden;
+        animation: pageEnter 1s ease;
+      }
+
+      /* 🔥 PARTICLE BACKGROUND */
+      canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: -1;
+      }
+
+      /* 🔥 LOGIN ENTRY OVERLAY */
+      .entry-overlay {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: fadeOut 1.5s forwards;
+      }
+
+      @keyframes fadeOut {
+        0% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          visibility: hidden;
+        }
       }
 
       /* NAVBAR */
@@ -28,9 +61,30 @@
       }
 
       .nav-right a {
+        position: relative;
         margin-left: 20px;
         cursor: pointer;
         font-weight: bold;
+        padding-bottom: 5px;
+      }
+
+      .nav-right a::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0%;
+        height: 2px;
+        background: yellow;
+        transition: 0.3s;
+      }
+
+      .nav-right a:hover::after {
+        width: 100%;
+      }
+
+      .nav-right a.active {
+        color: yellow;
       }
 
       /* LAYOUT */
@@ -40,6 +94,7 @@
         padding: 30px;
         gap: 20px;
         overflow: hidden;
+        animation: slideFade 1s ease;
       }
 
       .left,
@@ -52,7 +107,6 @@
       .left {
         align-items: center;
       }
-
       .right {
         align-items: flex-start;
       }
@@ -67,6 +121,11 @@
         padding: 25px;
         border-radius: 20px;
         background: rgba(255, 255, 255, 0.15);
+        transition: 0.4s;
+      }
+
+      .box:hover {
+        transform: translateY(-8px) scale(1.02);
       }
 
       input {
@@ -87,7 +146,7 @@
         cursor: pointer;
       }
 
-      /* 🔥 FIXED CIRCLE */
+      /* 🔥 GLOWING CIRCLE */
       .circle {
         width: 160px;
         height: 160px;
@@ -99,6 +158,22 @@
         font-size: 30px;
         font-weight: bold;
         background: conic-gradient(#ddd 0deg, #ddd 360deg);
+        box-shadow:
+          0 0 20px #00ffcc,
+          0 0 40px #00ffcc;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 10px #00ffcc;
+        }
+        50% {
+          box-shadow: 0 0 30px #00ffcc;
+        }
+        100% {
+          box-shadow: 0 0 10px #00ffcc;
+        }
       }
 
       table {
@@ -123,10 +198,39 @@
       #analysis {
         display: none;
       }
+
+      /* ANIMATIONS */
+      @keyframes pageEnter {
+        from {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideFade {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+        }
+      }
     </style>
   </head>
 
   <body>
+    <!-- 🔥 ENTRY SCREEN -->
+    <div class="entry-overlay">
+      <h1>🚀 Loading Dashboard...</h1>
+    </div>
+
+    <!-- 🔥 PARTICLE CANVAS -->
+    <canvas id="bg"></canvas>
+
     <div class="navbar">
       <h2>🚀 AI Resume Analyzer</h2>
       <div class="nav-right">
@@ -171,7 +275,6 @@
           placeholder="Search email..."
           onkeyup="filterTable()"
         />
-
         <select onchange="sortTable()" id="sort">
           <option value="">Sort</option>
           <option value="asc">Low → High</option>
@@ -198,6 +301,23 @@
       const BASE_URL = "http://localhost:8080";
       let data = [];
 
+      /* NAV ACTIVE */
+      document.querySelectorAll(".nav-right a").forEach((link) => {
+        link.addEventListener("click", function () {
+          document
+            .querySelectorAll(".nav-right a")
+            .forEach((l) => l.classList.remove("active"));
+          this.classList.add("active");
+        });
+      });
+
+      /* LOGOUT */
+      function logout() {
+        localStorage.clear();
+        alert("Logged out");
+        location.href = "login.html";
+      }
+
       /* NAV */
       function showDashboard() {
         dashboard.style.display = "flex";
@@ -209,31 +329,34 @@
         loadTable();
       }
 
-      /* 🔥 FIXED CIRCLE */
-      function animateCircle(score) {
+      /* 🔥 INTRO CIRCLE */
+      function introCircleAnimation() {
         let circle = document.getElementById("circle");
-
-        circle.innerText = "0%";
-        circle.style.background = "conic-gradient(#ddd 0deg,#ddd 360deg)";
-
         let current = 0;
 
-        let interval = setInterval(() => {
-          if (current >= score) {
-            clearInterval(interval);
+        let forward = setInterval(() => {
+          if (current >= 100) {
+            clearInterval(forward);
+            let reverse = setInterval(() => {
+              if (current <= 0) clearInterval(reverse);
+              else {
+                current--;
+                circle.innerText = current + "%";
+                circle.style.background = `conic-gradient(#00e676 ${current * 3.6}deg,#ddd 0deg)`;
+              }
+            }, 5);
           } else {
             current++;
             circle.innerText = current + "%";
             circle.style.background = `conic-gradient(#00e676 ${current * 3.6}deg,#ddd 0deg)`;
           }
-        }, 15);
+        }, 5);
       }
 
       /* ANALYZE */
       function analyze() {
         let file = document.getElementById("file").files[0];
         let skills = document.getElementById("skills").value;
-
         if (!file) {
           alert("Upload resume");
           return;
@@ -252,11 +375,8 @@
           .then((res) => res.json())
           .then((res) => {
             loading.style.display = "none";
-
             email.innerText = res.email;
-
             animateCircle(res.matchScore || 0);
-
             matched.innerHTML = res.matchedSkills
               .map((s) => "✔ " + s)
               .join("<br>");
@@ -264,6 +384,21 @@
               .map((s) => "✘ " + s)
               .join("<br>");
           });
+      }
+
+      /* NORMAL CIRCLE */
+      function animateCircle(score) {
+        let circle = document.getElementById("circle");
+        let current = 0;
+
+        let interval = setInterval(() => {
+          if (current >= score) clearInterval(interval);
+          else {
+            current++;
+            circle.innerText = current + "%";
+            circle.style.background = `conic-gradient(#00e676 ${current * 3.6}deg,#ddd 0deg)`;
+          }
+        }, 15);
       }
 
       /* TABLE */
@@ -279,8 +414,7 @@
       function displayData(list) {
         let html = "";
         list.forEach((d) => {
-          html += `
-    <tr>
+          html += `<tr>
       <td>${d.id}</td>
       <td>${d.email}</td>
       <td>${d.matchScore}</td>
@@ -310,6 +444,39 @@
           () => loadTable(),
         );
       }
+
+      /* 🔥 PARTICLES */
+      let canvas = document.getElementById("bg");
+      let ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      let particles = [];
+      for (let i = 0; i < 60; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        particles.forEach((p) => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+          ctx.fill();
+          p.y += 0.5;
+          if (p.y > canvas.height) p.y = 0;
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+
+      /* ON LOAD */
+      window.onload = () => {
+        introCircleAnimation();
+      };
     </script>
   </body>
 </html>
