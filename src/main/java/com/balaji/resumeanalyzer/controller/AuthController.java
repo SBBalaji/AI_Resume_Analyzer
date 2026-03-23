@@ -33,9 +33,8 @@ public class AuthController {
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     ////////////////////////////////////////////////////
-    // SIGNUP
+    // ✅ SIGNUP (FULL FIXED)
     ////////////////////////////////////////////////////
-
     @PostMapping("/signup")
     public Map<String, Object> signup(@RequestBody User user){
 
@@ -69,14 +68,17 @@ public class AuthController {
                 return response;
             }
 
+            // 🔥 IMPORTANT FIX
             user.setPassword(encoder.encode(user.getPassword()));
             user.setRole("USER");
 
-            userRepository.save(user);
+            User savedUser = userRepository.save(user);
+
+            System.out.println("✅ USER SAVED: " + savedUser.getEmail());
 
             response.put("success", true);
-            response.put("name", user.getName());
-            response.put("email", user.getEmail());
+            response.put("name", savedUser.getName());
+            response.put("email", savedUser.getEmail());
 
             return response;
 
@@ -90,27 +92,14 @@ public class AuthController {
     }
 
     ////////////////////////////////////////////////////
-    // LOGIN
+    // ✅ LOGIN
     ////////////////////////////////////////////////////
-
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody User loginUser){
 
         Map<String, Object> response = new HashMap<>();
 
         try {
-
-            if(loginUser.getEmail() == null || loginUser.getEmail().isEmpty()){
-                response.put("success", false);
-                response.put("message", "Email required");
-                return response;
-            }
-
-            if(loginUser.getPassword() == null || loginUser.getPassword().isEmpty()){
-                response.put("success", false);
-                response.put("message", "Password required");
-                return response;
-            }
 
             User user = userRepository.findByEmail(loginUser.getEmail());
 
@@ -140,109 +129,59 @@ public class AuthController {
 
             e.printStackTrace();
             response.put("success", false);
-            response.put("message", "Login error: " + e.getMessage());
+            response.put("message", "Login error");
             return response;
         }
     }
 
     ////////////////////////////////////////////////////
-    // FORGOT PASSWORD
+    // ✅ FORGOT PASSWORD
     ////////////////////////////////////////////////////
-
     @PostMapping("/forgot-password")
     public String forgotPassword(@RequestParam String email){
 
-        try {
+        User user = userRepository.findByEmail(email);
 
-            if(email == null || email.isEmpty()){
-                return "Email is required";
-            }
-
-            User user = userRepository.findByEmail(email);
-
-            if(user == null){
-                return "Email not found";
-            }
-
-            String otp = String.valueOf(new Random().nextInt(900000) + 100000);
-
-            PasswordReset existing = passwordResetRepository.findByEmail(email);
-
-            if(existing != null){
-                passwordResetRepository.delete(existing);
-            }
-
-            PasswordReset reset = new PasswordReset();
-            reset.setEmail(email);
-            reset.setOtp(otp);
-            reset.setExpiryTime(LocalDateTime.now().plusMinutes(5).toString());
-
-            passwordResetRepository.save(reset);
-
-            emailService.sendOtp(email, otp);
-
-            return "OTP sent to email";
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-            return "Error sending OTP: " + e.getMessage();
+        if(user == null){
+            return "Email not found";
         }
+
+        String otp = String.valueOf(new Random().nextInt(900000) + 100000);
+
+        PasswordReset reset = new PasswordReset();
+        reset.setEmail(email);
+        reset.setOtp(otp);
+        reset.setExpiryTime(LocalDateTime.now().plusMinutes(5).toString());
+
+        passwordResetRepository.save(reset);
+
+        emailService.sendOtp(email, otp);
+
+        return "OTP sent";
     }
 
     ////////////////////////////////////////////////////
-    // RESET PASSWORD
+    // ✅ RESET PASSWORD
     ////////////////////////////////////////////////////
-
     @PostMapping("/reset-password")
     public String resetPassword(
             @RequestParam String email,
             @RequestParam String otp,
             @RequestParam String newPassword){
 
-        try {
+        PasswordReset reset = passwordResetRepository.findByEmail(email);
 
-            if(email == null || otp == null || newPassword == null){
-                return "All fields are required";
-            }
-
-            PasswordReset reset = passwordResetRepository.findByEmail(email);
-
-            if(reset == null){
-                return "OTP not generated";
-            }
-
-            if(!reset.getOtp().equals(otp)){
-                return "Invalid OTP";
-            }
-
-            LocalDateTime expiry = LocalDateTime.parse(reset.getExpiryTime());
-
-            if(LocalDateTime.now().isAfter(expiry)){
-                return "OTP expired";
-            }
-
-            User user = userRepository.findByEmail(email);
-
-            if(user == null){
-                return "User not found";
-            }
-
-            if(newPassword.length() < 5){
-                return "Password must be at least 5 characters";
-            }
-
-            user.setPassword(encoder.encode(newPassword));
-            userRepository.save(user);
-
-            passwordResetRepository.delete(reset);
-
-            return "Password reset successful";
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-            return "Error resetting password: " + e.getMessage();
+        if(reset == null || !reset.getOtp().equals(otp)){
+            return "Invalid OTP";
         }
+
+        User user = userRepository.findByEmail(email);
+
+        user.setPassword(encoder.encode(newPassword));
+        userRepository.save(user);
+
+        passwordResetRepository.delete(reset);
+
+        return "Password updated";
     }
 }

@@ -23,41 +23,31 @@ public class ResumeController {
     private AnalysisRepository analysisRepository;
 
     ////////////////////////////////////////////////////
-    // UPLOAD + ANALYZE
+    // ✅ UPLOAD + ANALYZE
     ////////////////////////////////////////////////////
-
     @PostMapping("/upload")
     public Map<String, Object> uploadResume(
             @RequestParam("file") MultipartFile file,
             @RequestParam("skills") String skills
     ) throws Exception {
 
-        // ✅ VALIDATION
-        if (file == null || file.isEmpty()) {
-            throw new RuntimeException("Resume file is required");
-        }
+        System.out.println("✅ UPLOAD API HIT");
 
-        if (skills == null || skills.trim().isEmpty()) {
-            throw new RuntimeException("Skills are required");
-        }
-
-        // ✅ CALL SERVICE
         return resumeService.analyzeResume(file, skills);
     }
 
     ////////////////////////////////////////////////////
-    // DOWNLOAD RESUME
+    // ✅ DOWNLOAD
     ////////////////////////////////////////////////////
-
     @GetMapping("/download/{id}")
     public ResponseEntity<byte[]> downloadResume(@PathVariable Long id) {
 
         Analysis analysis = analysisRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Resume not found"));
+                .orElseThrow(() -> new RuntimeException("Not found"));
 
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=resume.pdf")
-                .header("Content-Type", "application/pdf") // ✅ FIXED
+                .header("Content-Type", "application/pdf")
                 .body(analysis.getResumeFile());
     }
 }
