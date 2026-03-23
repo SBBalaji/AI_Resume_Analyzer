@@ -21,21 +21,16 @@
         justify-content: space-between;
         padding: 15px 30px;
         background: rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(10px);
-        animation: fadeIn 1s;
       }
 
       .nav-right a {
         margin-left: 20px;
-        color: white;
-        text-decoration: none;
+        cursor: pointer;
         font-weight: bold;
-        transition: 0.3s;
       }
 
       .nav-right a:hover {
         color: yellow;
-        transform: scale(1.1);
       }
 
       /* LAYOUT */
@@ -59,21 +54,20 @@
         padding: 25px;
         border-radius: 15px;
         background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        animation: fadeIn 1s;
       }
 
-      input {
+      input,
+      select {
         width: 100%;
-        padding: 12px;
+        padding: 10px;
         margin-top: 10px;
         border-radius: 8px;
         border: none;
       }
 
       button {
-        margin-top: 15px;
-        padding: 12px;
+        margin-top: 10px;
+        padding: 10px;
         border: none;
         border-radius: 8px;
         background: #00c6ff;
@@ -87,15 +81,15 @@
 
       /* CIRCLE */
       .circle {
-        width: 150px;
-        height: 150px;
+        width: 160px;
+        height: 160px;
         border-radius: 50%;
-        margin: auto;
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: 24px;
-        background: conic-gradient(red 0%, #ddd 0%);
+        margin: auto;
+        font-size: 28px;
+        background: conic-gradient(#ddd 0deg, #ddd 360deg);
       }
 
       .matched {
@@ -105,13 +99,6 @@
         color: #ff8080;
       }
 
-      #loading {
-        display: none;
-        text-align: center;
-        margin-top: 10px;
-      }
-
-      /* ANALYSIS TABLE */
       table {
         width: 100%;
         background: white;
@@ -134,21 +121,10 @@
         color: red;
         cursor: pointer;
       }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-        }
-      }
     </style>
   </head>
 
   <body>
-    <!-- NAVBAR -->
     <div class="navbar">
       <b>🚀 AI Resume Analyzer</b>
 
@@ -161,7 +137,6 @@
 
     <!-- DASHBOARD -->
     <div id="dashboard" class="container">
-      <!-- LEFT -->
       <div class="left">
         <div class="box">
           <h3>Upload Resume</h3>
@@ -171,11 +146,10 @@
 
           <button onclick="analyze()">Analyze</button>
 
-          <p id="loading">Analyzing please wait...</p>
+          <p id="loading" style="display: none">⏳ Analyzing...</p>
         </div>
       </div>
 
-      <!-- RIGHT -->
       <div class="right">
         <div class="box">
           <div class="circle" id="circle">0%</div>
@@ -193,7 +167,7 @@
       </div>
     </div>
 
-    <!-- ANALYSIS PAGE -->
+    <!-- ANALYSIS -->
     <div id="analysis" style="display: none; padding: 20px">
       <input
         id="search"
@@ -201,11 +175,23 @@
         onkeyup="filterTable()"
       />
 
+      <select id="filter" onchange="applyFilter()">
+        <option value="">Sort By</option>
+        <option value="scoreAsc">Score Asc</option>
+        <option value="scoreDesc">Score Desc</option>
+        <option value="new">Newest First</option>
+        <option value="old">Oldest First</option>
+      </select>
+
       <table id="table">
         <thead>
           <tr>
+            <th>ID</th>
             <th>Email</th>
             <th>Score</th>
+            <th>Matched Skills</th>
+            <th>Missing Skills</th>
+            <th>Date</th>
             <th>Delete</th>
           </tr>
         </thead>
@@ -214,6 +200,16 @@
     </div>
 
     <script>
+      const BASE_URL = "http://localhost:8080";
+
+      const dashboard = document.getElementById("dashboard");
+      const analysis = document.getElementById("analysis");
+      const loading = document.getElementById("loading");
+      const email = document.getElementById("email");
+      const matched = document.getElementById("matched");
+      const missing = document.getElementById("missing");
+      const downloadBtn = document.getElementById("downloadBtn");
+
       function logout() {
         localStorage.clear();
         location.href = "login.html";
@@ -234,18 +230,27 @@
         let circle = document.getElementById("circle");
         let current = 0;
 
+        let colors = [
+          "#ff4d4d",
+          "#ff7043",
+          "#ff9800",
+          "#ffc107",
+          "#cddc39",
+          "#8bc34a",
+          "#4caf50",
+          "#2ecc71",
+          "#00c853",
+          "#00e676",
+        ];
+
         let interval = setInterval(() => {
           if (current >= score) {
             clearInterval(interval);
           } else {
             current++;
-
-            let color = "red";
-            if (current > 30) color = "orange";
-            if (current > 60) color = "green";
-
+            let color = colors[Math.floor(current / 10)] || "#00e676";
             circle.innerText = current + "%";
-            circle.style.background = `conic-gradient(${color} ${current * 3.6}deg,#ddd 0deg)`;
+            circle.style.background = `conic-gradient(${color} ${current * 3.6}deg, #ddd 0deg)`;
           }
         }, 20);
       }
@@ -265,7 +270,7 @@
         formData.append("file", file);
         formData.append("skills", skills);
 
-        fetch(window.location.origin + "/api/resume/upload", {
+        fetch(BASE_URL + "/api/resume/upload", {
           method: "POST",
           body: formData,
         })
@@ -273,69 +278,61 @@
           .then((data) => {
             loading.style.display = "none";
 
-            email.innerText = data.email;
+            let extractedEmail = data.email || "Not Found";
+            email.innerText = extractedEmail;
 
-            animateCircle(data.matchScore);
+            animateCircle(data.matchScore || 0);
 
-            downloadBtn.href =
-              window.location.origin + "/api/resume/download/" + data.id;
+            downloadBtn.href = BASE_URL + "/api/resume/download/" + data.id;
+            downloadBtn.target = "_blank";
 
-            matched.innerHTML = data.matchedSkills
+            matched.innerHTML = (data.matchedSkills || [])
               .map((s) => `<p class="matched">✔ ${s}</p>`)
               .join("");
-
-            missing.innerHTML = data.missingSkills
+            missing.innerHTML = (data.missingSkills || [])
               .map((s) => `<p class="missing">✘ ${s}</p>`)
               .join("");
 
-            saveToLocal(data);
+            let saveData = {
+              id: data.id,
+              email: extractedEmail,
+              matchScore: data.matchScore || 0,
+              matchedSkills: data.matchedSkills || [],
+              missingSkills: data.missingSkills || [],
+              analysisDate: new Date().toLocaleString(),
+              time: new Date().getTime(),
+            };
+
+            let arr = JSON.parse(localStorage.getItem("analysis") || "[]");
+            arr.push(saveData);
+            localStorage.setItem("analysis", JSON.stringify(arr));
           })
           .catch(() => {
             loading.style.display = "none";
-
-            let fake = {
-              email: "demo@gmail.com",
-              matchScore: 70,
-              matchedSkills: ["java", "html"],
-              missingSkills: ["react", "aws"],
-            };
-
-            animateCircle(fake.matchScore);
-
-            email.innerText = fake.email;
-
-            matched.innerHTML = fake.matchedSkills
-              .map((s) => `<p class="matched">✔ ${s}</p>`)
-              .join("");
-
-            missing.innerHTML = fake.missingSkills
-              .map((s) => `<p class="missing">✘ ${s}</p>`)
-              .join("");
-
-            saveToLocal(fake);
-
-            alert("Offline result shown");
+            alert("Error analyzing resume");
           });
-      }
-
-      function saveToLocal(data) {
-        let arr = JSON.parse(localStorage.getItem("analysis") || "[]");
-        arr.push(data);
-        localStorage.setItem("analysis", JSON.stringify(arr));
       }
 
       function loadTable() {
         let arr = JSON.parse(localStorage.getItem("analysis") || "[]");
+        renderTable(arr);
+      }
+
+      function renderTable(arr) {
         let tbody = document.querySelector("#table tbody");
         tbody.innerHTML = "";
 
         arr.forEach((d, i) => {
           tbody.innerHTML += `
-      <tr>
-        <td>${d.email}</td>
-        <td>${d.matchScore}</td>
-        <td class="delete" onclick="deleteRow(${i})">X</td>
-      </tr>`;
+    <tr>
+      <td>${d.id || i + 1}</td>
+      <td>${d.email}</td>
+      <td>${d.matchScore}</td>
+      <td>${d.matchedSkills.join(", ")}</td>
+      <td>${d.missingSkills.join(", ")}</td>
+      <td>${d.analysisDate}</td>
+      <td class="delete" onclick="deleteRow(${i})">X</td>
+    </tr>`;
         });
       }
 
@@ -351,9 +348,23 @@
         let rows = document.querySelectorAll("#table tbody tr");
 
         rows.forEach((r) => {
-          let email = r.children[0].innerText.toLowerCase();
+          let email = r.children[1].innerText.toLowerCase();
           r.style.display = email.includes(input) ? "" : "none";
         });
+      }
+
+      function applyFilter() {
+        let arr = JSON.parse(localStorage.getItem("analysis") || "[]");
+        let type = document.getElementById("filter").value;
+
+        if (type === "scoreAsc")
+          arr.sort((a, b) => a.matchScore - b.matchScore);
+        else if (type === "scoreDesc")
+          arr.sort((a, b) => b.matchScore - a.matchScore);
+        else if (type === "new") arr.sort((a, b) => b.time - a.time);
+        else if (type === "old") arr.sort((a, b) => a.time - b.time);
+
+        renderTable(arr);
       }
     </script>
   </body>
