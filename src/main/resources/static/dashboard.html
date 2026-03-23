@@ -1,256 +1,104 @@
 <!doctype html>
 <html>
   <head>
-    <title>AI Resume Analyzer</title>
+    <title>AI Resume Analyzer Dashboard</title>
 
     <style>
-      * {
-        box-sizing: border-box;
-        font-family: "Segoe UI";
-      }
-
       body {
+        font-family: Arial;
         margin: 0;
         background: linear-gradient(135deg, #667eea, #764ba2);
         color: white;
-        overflow-x: hidden;
       }
 
-      /* 🔥 NAVBAR (FIXED) */
+      /* NAVBAR */
       .navbar {
         display: flex;
         justify-content: space-between;
         padding: 15px 30px;
         background: rgba(0, 0, 0, 0.3);
         backdrop-filter: blur(10px);
-        animation: slideDown 0.8s ease;
-
-        position: sticky;
-        top: 0;
-        z-index: 1000;
       }
 
       .nav-right a {
         margin-left: 20px;
         cursor: pointer;
         font-weight: bold;
-        transition: 0.3s;
       }
 
       .nav-right a:hover {
         color: yellow;
-        transform: scale(1.1);
       }
 
-      /* 🔥 LAYOUT (FIXED) */
+      /* SECTIONS */
       .container {
         display: flex;
-        height: calc(100vh - 60px);
         padding: 30px;
         gap: 20px;
-        animation: fadeIn 1s ease;
-
-        overflow: hidden; /* 🔥 IMPORTANT */
       }
 
-      .left,
-      .right {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-      }
-
-      .left {
-        align-items: center;
-      }
-
-      /* 🔥 RIGHT SIDE SCROLL FIX */
-      .right {
-        align-items: flex-start;
-      }
-
-      .right .box {
-        width: 90%;
-        padding: 25px;
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(15px);
-
-        height: 100%;
-        max-height: 100%;
-        overflow-y: auto;
-
-        scrollbar-width: thin;
-      }
-
-      /* 🔥 SCROLLBAR DESIGN */
-      .right .box::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      .right .box::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      .right .box::-webkit-scrollbar-thumb {
-        background: #00c6ff;
-        border-radius: 10px;
-      }
-
-      /* 🔥 GLASS BOX */
       .box {
-        width: 90%;
-        padding: 25px;
-        border-radius: 20px;
+        flex: 1;
+        padding: 20px;
+        border-radius: 15px;
         background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(15px);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        animation: floatUp 1s ease;
-        transition: 0.3s;
-      }
-
-      .box:hover {
-        transform: translateY(-5px) scale(1.01);
+        backdrop-filter: blur(10px);
       }
 
       input,
       select {
-        width: 100%;
-        padding: 12px;
-        margin-top: 10px;
-        border-radius: 10px;
+        padding: 10px;
+        margin: 10px;
+        border-radius: 5px;
         border: none;
-        outline: none;
-      }
-
-      input:focus,
-      select:focus {
-        box-shadow: 0 0 10px #00c6ff;
       }
 
       button {
-        margin-top: 12px;
-        padding: 12px;
-        border: none;
-        border-radius: 10px;
-        background: linear-gradient(45deg, #00c6ff, #0072ff);
+        padding: 6px 10px;
+        background: red;
         color: white;
+        border: none;
         cursor: pointer;
-        transition: 0.3s;
+        border-radius: 5px;
       }
 
-      button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 0 15px #00c6ff;
-      }
-
-      /* 🔥 CIRCLE */
-      .circle {
-        width: 160px;
-        height: 160px;
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: auto;
-        font-size: 30px;
-        font-weight: bold;
-        background: conic-gradient(#ddd 0deg, #ddd 360deg);
-        box-shadow:
-          0 0 20px rgba(0, 0, 0, 0.3),
-          0 0 40px rgba(0, 255, 150, 0.4);
-        animation: popIn 0.8s ease;
-      }
-
-      .matched {
-        color: #00ff9d;
-      }
-      .missing {
-        color: #ff5c5c;
-      }
-
-      /* 🔥 TABLE */
+      /* TABLE */
       table {
-        width: 100%;
+        width: 90%;
+        margin: 20px auto;
+        border-collapse: collapse;
         background: white;
         color: black;
-        border-radius: 12px;
+        border-radius: 10px;
         overflow: hidden;
-        animation: fadeIn 1s ease;
       }
 
       th,
       td {
         padding: 12px;
+        border-bottom: 1px solid #ddd;
         text-align: center;
       }
 
       th {
-        background: linear-gradient(45deg, #667eea, #764ba2);
+        background: #667eea;
         color: white;
       }
 
       tr:hover {
         background: #f1f1f1;
-        transform: scale(1.01);
       }
 
-      .delete {
-        color: red;
-        cursor: pointer;
-        font-weight: bold;
-      }
-
-      .delete:hover {
-        transform: scale(1.3);
-      }
-
-      /* 🔥 ANIMATIONS */
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-        }
-      }
-
-      @keyframes slideDown {
-        from {
-          transform: translateY(-50px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-        }
-      }
-
-      @keyframes floatUp {
-        from {
-          transform: translateY(30px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-        }
-      }
-
-      @keyframes popIn {
-        from {
-          transform: scale(0.5);
-          opacity: 0;
-        }
-        to {
-          transform: scale(1);
-        }
+      #analysis {
+        display: none;
       }
     </style>
   </head>
 
   <body>
+    <!-- NAVBAR -->
     <div class="navbar">
-      <b>🚀 AI Resume Analyzer</b>
+      <h2>🚀 AI Resume Analyzer</h2>
       <div class="nav-right">
         <a onclick="showDashboard()">Dashboard</a>
         <a onclick="showAnalysis()">Analysis</a>
@@ -258,91 +106,93 @@
       </div>
     </div>
 
+    <!-- DASHBOARD -->
     <div id="dashboard" class="container">
-      <div class="left">
-        <div class="box">
-          <h3>Upload Resume</h3>
-          <input type="file" id="file" />
-          <input id="skills" placeholder="java,python,react" />
-          <button onclick="analyze()">Analyze</button>
-          <p id="loading" style="display: none">⏳ Analyzing...</p>
-        </div>
+      <div class="box">
+        <h3>Upload Resume</h3>
+        <input type="file" id="file" />
+        <input id="skills" placeholder="java,python,react" />
+        <button onclick="analyze()">Analyze</button>
+        <p id="loading" style="display: none">⏳ Analyzing...</p>
       </div>
 
-      <div class="right">
-        <div class="box">
-          <div class="circle" id="circle">0%</div>
-          <h3>Email: <span id="email"></span></h3>
-          <a id="downloadBtn" style="color: yellow">Download Resume</a>
+      <div class="box">
+        <h3>Result</h3>
+        <h4>Email: <span id="email"></span></h4>
+        <h4>Score: <span id="score"></span></h4>
 
-          <h4>Matched Skills</h4>
-          <div id="matched"></div>
+        <h4>Matched Skills</h4>
+        <div id="matched"></div>
 
-          <h4>Missing Skills</h4>
-          <div id="missing"></div>
-        </div>
+        <h4>Missing Skills</h4>
+        <div id="missing"></div>
       </div>
     </div>
 
-    <!-- JS SAME (UNCHANGED) -->
+    <!-- ANALYSIS PAGE -->
+    <div id="analysis">
+      <center>
+        <input
+          type="text"
+          id="search"
+          placeholder="Search by email..."
+          onkeyup="filterTable()"
+        />
+
+        <select id="sort" onchange="sortTable()">
+          <option value="">Sort By</option>
+          <option value="asc">Score Low → High</option>
+          <option value="desc">Score High → Low</option>
+        </select>
+      </center>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>Score</th>
+            <th>Matched Skills</th>
+            <th>Missing Skills</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
     <script>
       const BASE_URL = "http://localhost:8080";
-      const dashboard = document.getElementById("dashboard");
-      const analysis = document.getElementById("analysis");
-      const loading = document.getElementById("loading");
-      const email = document.getElementById("email");
-      const matched = document.getElementById("matched");
-      const missing = document.getElementById("missing");
-      const downloadBtn = document.getElementById("downloadBtn");
+      let data = [];
+
+      /* NAVIGATION */
+      function showDashboard() {
+        document.getElementById("dashboard").style.display = "flex";
+        document.getElementById("analysis").style.display = "none";
+      }
+
+      function showAnalysis() {
+        document.getElementById("dashboard").style.display = "none";
+        document.getElementById("analysis").style.display = "block";
+        loadTable();
+      }
 
       function logout() {
         localStorage.clear();
         location.href = "login.html";
       }
-      function showDashboard() {
-        dashboard.style.display = "flex";
-        analysis.style.display = "none";
-      }
-      function showAnalysis() {
-        dashboard.style.display = "none";
-        analysis.style.display = "block";
-        loadTable();
-      }
 
-      function animateCircle(score) {
-        let circle = document.getElementById("circle"),
-          current = 0;
-        let colors = [
-          "#ff4d4d",
-          "#ff7043",
-          "#ff9800",
-          "#ffc107",
-          "#cddc39",
-          "#8bc34a",
-          "#4caf50",
-          "#2ecc71",
-          "#00c853",
-          "#00e676",
-        ];
-        let interval = setInterval(() => {
-          if (current >= score) clearInterval(interval);
-          else {
-            current++;
-            let color = colors[Math.floor(current / 10)] || "#00e676";
-            circle.innerText = current + "%";
-            circle.style.background = `conic-gradient(${color} ${current * 3.6}deg, #ddd 0deg)`;
-          }
-        }, 20);
-      }
-
+      /* ANALYZE */
       function analyze() {
         let file = document.getElementById("file").files[0];
         let skills = document.getElementById("skills").value;
+
         if (!file) {
           alert("Upload resume");
           return;
         }
-        loading.style.display = "block";
+
+        document.getElementById("loading").style.display = "block";
 
         let formData = new FormData();
         formData.append("file", file);
@@ -354,29 +204,85 @@
         })
           .then((res) => res.json())
           .then((data) => {
-            loading.style.display = "none";
-            let extractedEmail = data.email || "Not Found";
-            email.innerText = extractedEmail;
-            animateCircle(data.matchScore || 0);
-            downloadBtn.href = BASE_URL + "/api/resume/download/" + data.id;
-            matched.innerHTML = (data.matchedSkills || [])
-              .map((s) => `<p class="matched">✔ ${s}</p>`)
-              .join("");
-            missing.innerHTML = (data.missingSkills || [])
-              .map((s) => `<p class="missing">✘ ${s}</p>`)
-              .join("");
-            let saveData = {
-              id: data.id,
-              email: extractedEmail,
-              matchScore: data.matchScore || 0,
-              matchedSkills: data.matchedSkills || [],
-              missingSkills: data.missingSkills || [],
-              analysisDate: new Date().toLocaleString(),
-              time: new Date().getTime(),
-            };
-            let arr = JSON.parse(localStorage.getItem("analysis") || "[]");
-            arr.push(saveData);
-            localStorage.setItem("analysis", JSON.stringify(arr));
+            document.getElementById("loading").style.display = "none";
+
+            document.getElementById("email").innerText = data.email;
+            document.getElementById("score").innerText = data.matchScore;
+
+            document.getElementById("matched").innerHTML = data.matchedSkills
+              .map((s) => `✔ ${s}`)
+              .join("<br>");
+
+            document.getElementById("missing").innerHTML = data.missingSkills
+              .map((s) => `✘ ${s}`)
+              .join("<br>");
+          });
+      }
+
+      /* LOAD TABLE */
+      function loadTable() {
+        fetch(BASE_URL + "/api/admin/analysis")
+          .then((res) => res.json())
+          .then((res) => {
+            data = res;
+            displayData(data);
+          });
+      }
+
+      /* DISPLAY TABLE */
+      function displayData(list) {
+        let html = "";
+
+        list.forEach((item) => {
+          html += `
+      <tr>
+        <td>${item.id}</td>
+        <td>${item.email}</td>
+        <td>${item.matchScore}</td>
+        <td>${item.matchedSkills}</td>
+        <td>${item.missingSkills}</td>
+        <td><button onclick="deleteData(${item.id})">Delete</button></td>
+      </tr>
+    `;
+        });
+
+        document.getElementById("tbody").innerHTML = html;
+      }
+
+      /* SEARCH */
+      function filterTable() {
+        let search = document.getElementById("search").value.toLowerCase();
+
+        let filtered = data.filter((d) =>
+          d.email.toLowerCase().includes(search),
+        );
+
+        displayData(filtered);
+      }
+
+      /* SORT */
+      function sortTable() {
+        let type = document.getElementById("sort").value;
+        let sorted = [...data];
+
+        if (type === "asc") {
+          sorted.sort((a, b) => a.matchScore - b.matchScore);
+        } else if (type === "desc") {
+          sorted.sort((a, b) => b.matchScore - a.matchScore);
+        }
+
+        displayData(sorted);
+      }
+
+      /* DELETE */
+      function deleteData(id) {
+        fetch(BASE_URL + "/api/admin/delete/" + id, {
+          method: "DELETE",
+        })
+          .then((res) => res.text())
+          .then((msg) => {
+            alert(msg);
+            loadTable();
           });
       }
     </script>

@@ -8,25 +8,31 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailService {
 
-    @Autowired
+    @Autowired(required = false) // 🔥 optional (prevents crash if not configured)
     private JavaMailSender mailSender;
 
     public void sendOtp(String email, String otp) {
 
+        // ✅ ALWAYS print OTP (for debugging)
+        System.out.println("=================================");
+        System.out.println("OTP for " + email + " is: " + otp);
+        System.out.println("=================================");
+
+        // ✅ Try sending email
         try {
+
+            // If mailSender not configured → skip email
+            if (mailSender == null) {
+                System.out.println("⚠ Email service not configured. OTP printed only.");
+                return;
+            }
 
             SimpleMailMessage message = new SimpleMailMessage();
 
-            // Sender email
             message.setFrom("balajikumar12624@gmail.com");
-
-            // Receiver email
             message.setTo(email);
-
-            // Email subject
             message.setSubject("AI Resume Analyzer - Password Reset OTP");
 
-            // Email body
             message.setText(
                     "Hello,\n\n" +
                     "Your OTP for password reset is: " + otp + "\n\n" +
@@ -36,13 +42,15 @@ public class EmailService {
                     "AI Resume Analyzer Team"
             );
 
-            // Send email
             mailSender.send(message);
+
+            System.out.println("✅ OTP email sent successfully!");
 
         } catch (Exception e) {
 
+            // 🔥 fallback → don't break app
+            System.out.println("❌ Email sending failed. OTP shown in console.");
             e.printStackTrace();
-            throw new RuntimeException("Error sending OTP email");
         }
     }
 }
