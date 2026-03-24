@@ -17,7 +17,7 @@
         animation: pageEnter 1s ease;
       }
 
-      /* 🔥 PARTICLES */
+      /* PARTICLES */
       canvas {
         position: fixed;
         top: 0;
@@ -25,7 +25,7 @@
         z-index: -1;
       }
 
-      /* 🔥 ENTRY LOADER */
+      /* ENTRY LOADER */
       .entry-overlay {
         position: fixed;
         width: 100%;
@@ -37,7 +37,6 @@
         align-items: center;
         animation: fadeOut 1.5s forwards;
       }
-
       @keyframes fadeOut {
         0% {
           opacity: 1;
@@ -55,33 +54,72 @@
         padding: 15px 30px;
         background: rgba(0, 0, 0, 0.3);
         backdrop-filter: blur(10px);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
       }
 
       .nav-right a {
+        position: relative;
         margin-left: 20px;
         cursor: pointer;
         font-weight: bold;
+        padding-bottom: 5px;
+        transition: 0.3s;
       }
 
-      /* LAYOUT */
+      .nav-right a::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0%;
+        height: 2px;
+        background: yellow;
+        transition: 0.3s;
+      }
+
+      .nav-right a:hover::after {
+        width: 100%;
+      }
+      .nav-right a.active {
+        color: yellow;
+      }
+
+      /* LAYOUT FIX */
       .container {
         display: flex;
+        justify-content: center;
+        align-items: center;
         height: calc(100vh - 60px);
-        padding: 30px;
-        gap: 20px;
+        gap: 40px;
+        padding: 20px;
+        animation: slideFade 1s ease;
+      }
+
+      .left,
+      .right {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
       }
 
       /* CARD */
       .box {
-        width: 90%;
-        padding: 25px;
+        width: 85%;
+        padding: 30px;
         border-radius: 20px;
         background: rgba(255, 255, 255, 0.15);
         transition: 0.4s;
+        backdrop-filter: blur(10px);
+        min-height: 350px;
       }
 
       .box:hover {
-        transform: scale(1.03);
+        transform: translateY(-10px) scale(1.03);
+        box-shadow: 0 0 30px rgba(0, 255, 204, 0.4);
       }
 
       /* INPUT */
@@ -110,7 +148,15 @@
         transform: scale(1.05);
       }
 
-      /* 🔥 CIRCLE (UNCHANGED CORE) */
+      /* LOADING */
+      #loading {
+        display: none;
+        margin-top: 10px;
+        font-weight: bold;
+        color: yellow;
+      }
+
+      /* CIRCLE */
       .circle {
         width: 160px;
         height: 160px;
@@ -123,16 +169,35 @@
         font-weight: bold;
         background: conic-gradient(#ddd 0deg, #ddd 360deg);
         box-shadow: 0 0 25px #00ffcc;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 10px #00ffcc;
+        }
+        50% {
+          box-shadow: 0 0 30px #00ffcc;
+        }
+        100% {
+          box-shadow: 0 0 10px #00ffcc;
+        }
       }
 
       /* TABLE */
       table {
         width: 90%;
-        margin: 70px auto 20px;
+        margin: 80px auto;
         background: white;
         color: black;
         border-radius: 10px;
         overflow: hidden;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        text-align: center;
       }
 
       th {
@@ -140,33 +205,20 @@
         color: white;
       }
 
-      /* 🔥 FIXED TOP LEFT SEARCH */
+      /* SEARCH */
       .top-controls {
         position: absolute;
         top: 80px;
         left: 30px;
         display: flex;
         gap: 10px;
-        z-index: 100;
-      }
-
-      /* SEARCH SMALL */
-      #searchInput {
-        width: 200px;
-        padding: 8px;
-        border-radius: 8px;
-      }
-
-      /* FILTER */
-      #filterSelect {
-        padding: 8px;
-        border-radius: 8px;
       }
 
       /* ANALYSIS */
       #analysis {
         display: none;
-        position: relative;
+        overflow: auto;
+        height: calc(100vh - 60px);
       }
 
       /* ANIMATIONS */
@@ -174,6 +226,16 @@
         from {
           opacity: 0;
           transform: scale(0.9);
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideFade {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
         }
         to {
           opacity: 1;
@@ -200,24 +262,35 @@
 
     <!-- DASHBOARD -->
     <div id="dashboard" class="container">
-      <div class="box">
-        <h3>Upload Resume</h3>
-        <input type="file" id="file" />
-        <input id="skills" placeholder="java,python,react" />
-        <button onclick="analyze()">Analyze</button>
+      <div class="left">
+        <div class="box">
+          <h3>Upload Resume</h3>
+
+          <input type="file" id="file" />
+          <input id="skills" placeholder="java,python,react" />
+
+          <button onclick="analyze()">Analyze</button>
+          <p id="loading">⏳ Analyzing... 0s</p>
+        </div>
       </div>
 
-      <div class="box">
-        <div class="circle" id="circle">0%</div>
-        <h3>Email: <span id="email"></span></h3>
-        <div id="matched"></div>
-        <div id="missing"></div>
+      <div class="right">
+        <div class="box">
+          <div class="circle" id="circle">0%</div>
+
+          <h3>Email: <span id="email"></span></h3>
+
+          <h4>Matched Skills</h4>
+          <div id="matched"></div>
+
+          <h4>Missing Skills</h4>
+          <div id="missing"></div>
+        </div>
       </div>
     </div>
 
     <!-- ANALYSIS -->
     <div id="analysis">
-      <!-- 🔥 NEW SMALL SEARCH -->
       <div class="top-controls">
         <input id="searchInput" placeholder="Search email..." />
         <select id="filterSelect">
@@ -229,7 +302,6 @@
         </select>
       </div>
 
-      <!-- OLD (KEPT AS YOU ASKED) -->
       <center>
         <input
           id="search"
@@ -263,7 +335,17 @@
       let data = [];
       let allData = [];
 
-      /* NAV */
+      /* NAV ACTIVE */
+      document.querySelectorAll(".nav-right a").forEach((link) => {
+        link.addEventListener("click", function () {
+          document
+            .querySelectorAll(".nav-right a")
+            .forEach((l) => l.classList.remove("active"));
+          this.classList.add("active");
+        });
+      });
+
+      /* NAV FUNCTIONS */
       function showDashboard() {
         dashboard.style.display = "flex";
         analysis.style.display = "none";
@@ -280,7 +362,7 @@
         location.href = "login.html";
       }
 
-      /* 🔥 USER BASED FIX */
+      /* LOAD TABLE */
       function loadTable() {
         const email = localStorage.getItem("userEmail");
 
@@ -295,19 +377,38 @@
 
       /* TABLE */
       function displayData(list) {
-        let html = "";
-        list.forEach((d) => {
-          html += `<tr>
-      <td>${d.id}</td>
-      <td>${d.email}</td>
-      <td>${d.matchScore}</td>
-      <td>${d.matchedSkills}</td>
-      <td>${d.missingSkills}</td>
-      <td><button onclick="deleteData(${d.id})">Delete</button></td>
-    </tr>`;
-        });
-        tbody.innerHTML = html;
+        tbody.innerHTML = list
+          .map(
+            (d) => `
+<tr>
+<td>${d.id}</td>
+<td>${d.email}</td>
+<td>${d.matchScore}</td>
+<td>${d.matchedSkills}</td>
+<td>${d.missingSkills}</td>
+<td><button onclick="deleteData(${d.id})">Delete</button></td>
+</tr>`,
+          )
+          .join("");
       }
+
+      /* SEARCH */
+      searchInput.oninput = () => {
+        let v = searchInput.value.toLowerCase();
+        displayData(allData.filter((d) => d.email.toLowerCase().includes(v)));
+      };
+
+      /* FILTER */
+      filterSelect.onchange = () => {
+        let arr = [...allData];
+        if (filterSelect.value === "scoreHigh")
+          arr.sort((a, b) => b.matchScore - a.matchScore);
+        if (filterSelect.value === "scoreLow")
+          arr.sort((a, b) => a.matchScore - b.matchScore);
+        if (filterSelect.value === "new") arr.sort((a, b) => b.id - a.id);
+        if (filterSelect.value === "old") arr.sort((a, b) => a.id - b.id);
+        displayData(arr);
+      };
 
       /* OLD SEARCH */
       function filterTable() {
@@ -325,24 +426,6 @@
         displayData(arr);
       }
 
-      /* NEW SEARCH */
-      searchInput.addEventListener("input", () => {
-        let val = searchInput.value.toLowerCase();
-        displayData(allData.filter((d) => d.email.toLowerCase().includes(val)));
-      });
-
-      /* NEW FILTER */
-      filterSelect.addEventListener("change", () => {
-        let arr = [...allData];
-        if (filterSelect.value === "scoreHigh")
-          arr.sort((a, b) => b.matchScore - a.matchScore);
-        if (filterSelect.value === "scoreLow")
-          arr.sort((a, b) => a.matchScore - b.matchScore);
-        if (filterSelect.value === "new") arr.sort((a, b) => b.id - a.id);
-        if (filterSelect.value === "old") arr.sort((a, b) => a.id - b.id);
-        displayData(arr);
-      });
-
       /* DELETE */
       function deleteData(id) {
         fetch(BASE_URL + "/api/admin/delete/" + id, { method: "DELETE" }).then(
@@ -350,15 +433,28 @@
         );
       }
 
-      /* ANALYZE (EMAIL FIX ADDED) */
+      /* ANALYZE WITH TIMER */
       function analyze() {
         let file = document.getElementById("file").files[0];
         let skills = document.getElementById("skills").value;
 
+        if (!file) {
+          alert("Upload resume");
+          return;
+        }
+
+        let loading = document.getElementById("loading");
+        loading.style.display = "block";
+
+        let sec = 0;
+        let timer = setInterval(() => {
+          sec++;
+          loading.innerText = "⏳ Analyzing... " + sec + "s";
+        }, 1000);
+
         let formData = new FormData();
         formData.append("file", file);
         formData.append("skills", skills);
-
         formData.append("email", localStorage.getItem("userEmail"));
 
         fetch(BASE_URL + "/api/resume/upload", {
@@ -367,14 +463,20 @@
         })
           .then((res) => res.json())
           .then((res) => {
-            email.innerText = res.email;
+            clearInterval(timer);
+            loading.style.display = "none";
+
+            email.innerText = res.email; // resume email
             animateCircle(res.matchScore || 0);
+
             matched.innerHTML = res.matchedSkills.join("<br>");
             missing.innerHTML = res.missingSkills.join("<br>");
+
+            loadTable();
           });
       }
 
-      /* 🔥 CIRCLE (UNCHANGED) */
+      /* CIRCLE */
       function animateCircle(score) {
         let circle = document.getElementById("circle");
         let current = 0;
