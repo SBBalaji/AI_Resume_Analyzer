@@ -209,7 +209,7 @@
         width: 250px;
       }
 
-      /* ================= SECOND FILTER (CENTER) ================= */
+      /* ================= SECOND FILTER ================= */
       .center-controls {
         text-align: center;
         margin-top: 20px;
@@ -234,27 +234,6 @@
       th {
         background: #667eea;
         color: white;
-      }
-
-      /* ================= ANIMATION ================= */
-      @keyframes pageEnter {
-        from {
-          opacity: 0;
-          transform: scale(0.9);
-        }
-        to {
-          opacity: 1;
-        }
-      }
-
-      @keyframes slideFade {
-        from {
-          opacity: 0;
-          transform: translateY(30px);
-        }
-        to {
-          opacity: 1;
-        }
       }
     </style>
   </head>
@@ -293,7 +272,7 @@
         <div class="box">
           <div class="circle" id="circle">0%</div>
 
-          <h3>Email: <span id="email"></span></h3>
+          <h3>Email: <span id="email">-</span></h3>
 
           <h4>Matched Skills</h4>
           <div id="matched"></div>
@@ -306,7 +285,6 @@
 
     <!-- ================= ANALYSIS ================= -->
     <div id="analysis">
-      <!-- 🔥 TOP SEARCH -->
       <div class="top-controls">
         <input id="searchInput" placeholder="Search email..." />
         <select id="filterSelect">
@@ -318,7 +296,6 @@
         </select>
       </div>
 
-      <!-- 🔥 CENTER SEARCH (KEPT FROM OLD CODE) -->
       <div class="center-controls">
         <input
           id="search"
@@ -352,52 +329,41 @@
       let data = [];
       let allData = [];
 
-      /* NAV ACTIVE */
-      document.querySelectorAll(".nav-right a").forEach((link) => {
-        link.addEventListener("click", function () {
-          document
-            .querySelectorAll(".nav-right a")
-            .forEach((l) => l.classList.remove("active"));
-          this.classList.add("active");
-        });
-      });
-
-      /* NAV */
       function showDashboard() {
         dashboard.style.display = "flex";
         analysis.style.display = "none";
       }
+
       function showAnalysis() {
         dashboard.style.display = "none";
         analysis.style.display = "block";
         loadTable();
       }
 
-      /* LOGOUT */
       function logout() {
         localStorage.clear();
         location.href = "login.html";
       }
 
-      /* LOAD TABLE */
+      /* ✅ FIXED API */
       function loadTable() {
-        fetch(BASE_URL + "/api/admin/analysis")
+        fetch(BASE_URL + "/api/analysis")
           .then((res) => res.json())
           .then((res) => {
             data = res;
             allData = res;
             displayData(res);
-          });
+          })
+          .catch((err) => console.error(err));
       }
 
-      /* DISPLAY */
       function displayData(list) {
         tbody.innerHTML = list
           .map(
             (d) => `
 <tr>
 <td>${d.id}</td>
-<td>${d.email}</td>
+<td>${d.email || d.candidateEmail || "N/A"}</td>
 <td>${d.matchScore}</td>
 <td>${d.matchedSkills}</td>
 <td>${d.missingSkills}</td>
@@ -407,31 +373,24 @@
           .join("");
       }
 
-      /* TOP SEARCH */
       searchInput.oninput = () => {
         let v = searchInput.value.toLowerCase();
-        displayData(allData.filter((d) => d.email.toLowerCase().includes(v)));
+        displayData(
+          allData.filter((d) =>
+            (d.email || d.candidateEmail || "").toLowerCase().includes(v),
+          ),
+        );
       };
 
-      /* TOP FILTER */
-      filterSelect.onchange = () => {
-        let arr = [...allData];
-        if (filterSelect.value === "scoreHigh")
-          arr.sort((a, b) => b.matchScore - a.matchScore);
-        if (filterSelect.value === "scoreLow")
-          arr.sort((a, b) => a.matchScore - b.matchScore);
-        if (filterSelect.value === "new") arr.sort((a, b) => b.id - a.id);
-        if (filterSelect.value === "old") arr.sort((a, b) => a.id - b.id);
-        displayData(arr);
-      };
-
-      /* CENTER SEARCH */
       function filterTable() {
         let val = search.value.toLowerCase();
-        displayData(data.filter((d) => d.email.toLowerCase().includes(val)));
+        displayData(
+          data.filter((d) =>
+            (d.email || d.candidateEmail || "").toLowerCase().includes(val),
+          ),
+        );
       }
 
-      /* CENTER SORT */
       function sortTable() {
         let arr = [...data];
         if (sort.value === "asc")
@@ -441,14 +400,13 @@
         displayData(arr);
       }
 
-      /* DELETE */
       function deleteData(id) {
         fetch(BASE_URL + "/api/admin/delete/" + id, { method: "DELETE" }).then(
           () => loadTable(),
         );
       }
 
-      /* ANALYZE */
+      /* ✅ FIXED ANALYZE */
       function analyze() {
         let file = document.getElementById("file").files[0];
         let skills = document.getElementById("skills").value;
@@ -461,17 +419,9 @@
         let loading = document.getElementById("loading");
         loading.style.display = "block";
 
-        let sec = 0;
-        let timer = setInterval(() => {
-          sec++;
-          loading.innerText = "⏳ Analyzing... " + sec + "s";
-        }, 1000);
-
         let formData = new FormData();
         formData.append("file", file);
         formData.append("skills", skills);
-
-        /* ✅ NO USER EMAIL */
 
         fetch(BASE_URL + "/api/resume/upload", {
           method: "POST",
@@ -479,22 +429,25 @@
         })
           .then((res) => res.json())
           .then((res) => {
-            clearInterval(timer);
-            loading.style.display = "none";
-
-            /* ✅ RESUME EMAIL */
-            document.getElementById("email").innerText = res.email;
+            document.getElementById("email").innerText =
+              res.email || res.candidateEmail || "No email found";
 
             animateCircle(res.matchScore || 0);
 
-            matched.innerHTML = res.matchedSkills.join("<br>");
-            missing.innerHTML = res.missingSkills.join("<br>");
+            matched.innerHTML = (res.matchedSkills || []).join("<br>");
+            missing.innerHTML = (res.missingSkills || []).join("<br>");
+
+            loading.style.display = "none";
 
             loadTable();
+          })
+          .catch((err) => {
+            loading.style.display = "none";
+            alert("Error analyzing resume");
+            console.error(err);
           });
       }
 
-      /* CIRCLE */
       function animateCircle(score) {
         let circle = document.getElementById("circle");
         let current = 0;
