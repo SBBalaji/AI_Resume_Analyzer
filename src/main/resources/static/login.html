@@ -127,7 +127,6 @@
 
       <p id="loginLoading">Logging in...</p>
 
-      <!-- ✅ COMBINED LINKS -->
       <div class="links">
         <p><a href="signup.html">Create Account</a></p>
         <p><a href="forgot.html" style="color: red">Forgot Password?</a></p>
@@ -173,8 +172,11 @@
           const data = await res.json();
 
           if (data.success) {
+            // 🔥 STORE USER DATA (VERY IMPORTANT)
             localStorage.setItem("userName", data.name);
             localStorage.setItem("userEmail", data.email);
+
+            console.log("Logged in as:", data.email);
 
             window.location.href = "dashboard.html";
           } else {

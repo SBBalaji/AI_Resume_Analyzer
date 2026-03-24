@@ -17,21 +17,30 @@ public class AdminController {
     private AnalysisRepository analysisRepository;
 
     ////////////////////////////////////////////////////
-    // ✅ GET ALL ANALYSIS (MATCHES FRONTEND)
+    // ✅ GET ALL ANALYSIS (MAIN ADMIN API)
     ////////////////////////////////////////////////////
     @GetMapping("/analysis")
-    public List<Analysis> getAllAnalysis(@RequestParam(required = false) String adminEmail) {
-
-        // 🔥 For now returning all (you can filter later if needed)
+    public List<Analysis> getAllAnalysis(
+            @RequestParam(required = false) String adminEmail
+    ) {
+        // 🔥 Currently returning all (admin view)
         return analysisRepository.findAll();
     }
 
     ////////////////////////////////////////////////////
-    // OPTIONAL: KEEP OLD ENDPOINT
+    // ✅ OPTIONAL: KEEP OLD ENDPOINT (BACKWARD SUPPORT)
     ////////////////////////////////////////////////////
     @GetMapping("/all")
     public List<Analysis> getAll() {
         return analysisRepository.findAll();
+    }
+
+    ////////////////////////////////////////////////////
+    // ✅ NEW: FILTER BY EMAIL (ADMIN SEARCH)
+    ////////////////////////////////////////////////////
+    @GetMapping("/user/{email}")
+    public List<Analysis> getByEmail(@PathVariable String email) {
+        return analysisRepository.findByEmail(email);
     }
 
     ////////////////////////////////////////////////////

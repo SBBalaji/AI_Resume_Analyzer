@@ -36,7 +36,6 @@ public class ResumeService {
 
         String text = stripper.getText(document);
 
-        // OCR if text is too small
         if (text == null || text.trim().length() < 30) {
 
             PDFRenderer renderer = new PDFRenderer(document);
@@ -56,7 +55,6 @@ public class ResumeService {
 
         document.close();
 
-        // ✅ LIGHT CLEAN (keep structure)
         text = text.toLowerCase()
                    .replaceAll("\\r", " ")
                    .replaceAll("\\n", " ")
@@ -66,7 +64,7 @@ public class ResumeService {
     }
 
     ////////////////////////////////////////////////////
-    // EMAIL EXTRACTION
+    // EMAIL EXTRACTION (NOT USED NOW)
     ////////////////////////////////////////////////////
 
     public String extractEmail(String text) {
@@ -76,24 +74,23 @@ public class ResumeService {
     }
 
     ////////////////////////////////////////////////////
-    // MAIN ANALYSIS METHOD (FINAL FIXED)
+    // MAIN ANALYSIS METHOD (🔥 UPDATED)
     ////////////////////////////////////////////////////
 
-    public Map<String, Object> analyzeResume(MultipartFile file, String skills) throws Exception {
+    public Map<String, Object> analyzeResume(
+            MultipartFile file,
+            String skills,
+            String userEmail   // 🔥 NEW PARAM
+    ) throws Exception {
 
         // 1. Extract text
         String text = extractText(file);
 
-        // 🔥 STRONG NORMALIZATION (CRITICAL FIX)
         String normalizedText = text.toLowerCase()
-                .replaceAll("[^a-z0-9]", "")   // remove symbols
-                .replaceAll("\\s+", "");       // remove spaces
+                .replaceAll("[^a-z0-9]", "")
+                .replaceAll("\\s+", "");
 
-        System.out.println("TEXT LENGTH: " + text.length());
-        System.out.println("NORMALIZED PREVIEW: " +
-                normalizedText.substring(0, Math.min(200, normalizedText.length())));
-
-        // 2. Skills list
+        // 2. Skills
         List<String> jobSkills = (skills == null || skills.isEmpty())
                 ? new ArrayList<>()
                 : Arrays.asList(skills.toLowerCase().split(","));
@@ -103,7 +100,6 @@ public class ResumeService {
 
         int match = 0;
 
-        // 3. MATCHING (STRONG)
         for (String skill : jobSkills) {
 
             String cleanSkill = skill.trim()
@@ -118,16 +114,15 @@ public class ResumeService {
             }
         }
 
-        System.out.println("MATCHED: " + matched);
-        System.out.println("MISSING: " + missing);
-
-        // 4. SCORE
         int score = jobSkills.size() == 0 ? 0 : (match * 100) / jobSkills.size();
 
-        // 5. SAVE
+        ////////////////////////////////////////////////////
+        // 🔥 SAVE WITH LOGGED-IN USER EMAIL
+        ////////////////////////////////////////////////////
+
         Analysis analysis = new Analysis();
 
-        analysis.setEmail(extractEmail(text));
+        analysis.setEmail(userEmail); // ✅ FIXED
         analysis.setMatchScore(score);
         analysis.setMatchedSkills(String.join(",", matched));
         analysis.setMissingSkills(String.join(",", missing));
@@ -136,7 +131,10 @@ public class ResumeService {
 
         analysisRepository.save(analysis);
 
-        // 6. RESPONSE
+        ////////////////////////////////////////////////////
+        // RESPONSE
+        ////////////////////////////////////////////////////
+
         Map<String, Object> result = new HashMap<>();
 
         result.put("id", analysis.getId());
