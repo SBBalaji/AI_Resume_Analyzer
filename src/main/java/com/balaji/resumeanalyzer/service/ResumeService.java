@@ -28,7 +28,6 @@ public class ResumeService {
     ////////////////////////////////////////////////////
     // TEXT EXTRACTION (PDF + OCR)
     ////////////////////////////////////////////////////
-
     public String extractText(MultipartFile file) throws Exception {
 
         PDDocument document = PDDocument.load(file.getInputStream());
@@ -36,6 +35,7 @@ public class ResumeService {
 
         String text = stripper.getText(document);
 
+        // 🔥 OCR fallback
         if (text == null || text.trim().length() < 30) {
 
             PDFRenderer renderer = new PDFRenderer(document);
@@ -55,58 +55,50 @@ public class ResumeService {
 
         document.close();
 
-        text = text.toLowerCase()
+        // 🔥 CLEAN TEXT
+        return text.toLowerCase()
                    .replaceAll("\\r", " ")
                    .replaceAll("\\n", " ")
-                   .replaceAll("\\t", " ");
-
-        return text;
+                   .replaceAll("\\t", " ")
+                   .trim();
     }
 
     ////////////////////////////////////////////////////
-    // EMAIL EXTRACTION (NOT USED NOW)
+    // MAIN ANALYSIS METHOD
     ////////////////////////////////////////////////////
-
-    public String extractEmail(String text) {
-        Pattern p = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+");
-        Matcher m = p.matcher(text);
-        return m.find() ? m.group() : "Not Found";
-    }
-
-    ////////////////////////////////////////////////////
-    // MAIN ANALYSIS METHOD (🔥 UPDATED)
-    ////////////////////////////////////////////////////
-
     public Map<String, Object> analyzeResume(
             MultipartFile file,
             String skills,
-            String userEmail   // 🔥 NEW PARAM
+            String userEmail   // ✅ USER EMAIL
     ) throws Exception {
 
-        // 1. Extract text
+        // 1️⃣ Extract text
         String text = extractText(file);
 
-        String normalizedText = text.toLowerCase()
-                .replaceAll("[^a-z0-9]", "")
-                .replaceAll("\\s+", "");
+        String normalizedText = text
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]", "");
 
-        // 2. Skills
-        List<String> jobSkills = (skills == null || skills.isEmpty())
-                ? new ArrayList<>()
-                : Arrays.asList(skills.toLowerCase().split(","));
+        // 2️⃣ Handle skills safely
+        List<String> jobSkills = new ArrayList<>();
+
+        if (skills != null && !skills.trim().isEmpty()) {
+            jobSkills = Arrays.asList(skills.toLowerCase().split(","));
+        }
 
         List<String> matched = new ArrayList<>();
         List<String> missing = new ArrayList<>();
 
         int match = 0;
 
+        // 3️⃣ Compare skills
         for (String skill : jobSkills) {
 
             String cleanSkill = skill.trim()
                     .toLowerCase()
                     .replaceAll("[^a-z0-9]", "");
 
-            if (normalizedText.contains(cleanSkill)) {
+            if (!cleanSkill.isEmpty() && normalizedText.contains(cleanSkill)) {
                 matched.add(skill.trim());
                 match++;
             } else {
@@ -114,15 +106,15 @@ public class ResumeService {
             }
         }
 
+        // 4️⃣ Score
         int score = jobSkills.size() == 0 ? 0 : (match * 100) / jobSkills.size();
 
         ////////////////////////////////////////////////////
-        // 🔥 SAVE WITH LOGGED-IN USER EMAIL
+        // 🔥 SAVE DATA (USER BASED)
         ////////////////////////////////////////////////////
-
         Analysis analysis = new Analysis();
 
-        analysis.setEmail(userEmail); // ✅ FIXED
+        analysis.setEmail(userEmail);   // ✅ IMPORTANT FIX
         analysis.setMatchScore(score);
         analysis.setMatchedSkills(String.join(",", matched));
         analysis.setMissingSkills(String.join(",", missing));
@@ -134,7 +126,6 @@ public class ResumeService {
         ////////////////////////////////////////////////////
         // RESPONSE
         ////////////////////////////////////////////////////
-
         Map<String, Object> result = new HashMap<>();
 
         result.put("id", analysis.getId());
