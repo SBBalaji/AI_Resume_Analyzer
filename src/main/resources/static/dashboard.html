@@ -17,15 +17,7 @@
         animation: pageEnter 1s ease;
       }
 
-      /* PARTICLES */
-      canvas {
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: -1;
-      }
-
-      /* ENTRY LOADER */
+      /* ================= ENTRY ================= */
       .entry-overlay {
         position: fixed;
         width: 100%;
@@ -47,7 +39,15 @@
         }
       }
 
-      /* NAVBAR */
+      /* ================= PARTICLES ================= */
+      canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: -1;
+      }
+
+      /* ================= NAVBAR ================= */
       .navbar {
         display: flex;
         justify-content: space-between;
@@ -86,7 +86,7 @@
         color: yellow;
       }
 
-      /* LAYOUT FIX */
+      /* ================= LAYOUT ================= */
       .container {
         display: flex;
         justify-content: center;
@@ -106,7 +106,7 @@
         height: 100%;
       }
 
-      /* CARD */
+      /* ================= CARD ================= */
       .box {
         width: 85%;
         padding: 30px;
@@ -122,8 +122,9 @@
         box-shadow: 0 0 30px rgba(0, 255, 204, 0.4);
       }
 
-      /* INPUT */
-      input {
+      /* ================= INPUT ================= */
+      input,
+      select {
         width: 100%;
         padding: 10px;
         margin-top: 10px;
@@ -131,7 +132,7 @@
         border: none;
       }
 
-      /* BUTTON */
+      /* ================= BUTTON ================= */
       button {
         margin-top: 10px;
         padding: 10px;
@@ -148,7 +149,7 @@
         transform: scale(1.05);
       }
 
-      /* LOADING */
+      /* ================= LOADING ================= */
       #loading {
         display: none;
         margin-top: 10px;
@@ -156,7 +157,7 @@
         color: yellow;
       }
 
-      /* CIRCLE */
+      /* ================= CIRCLE ================= */
       .circle {
         width: 160px;
         height: 160px;
@@ -184,10 +185,40 @@
         }
       }
 
-      /* TABLE */
+      /* ================= ANALYSIS ================= */
+      #analysis {
+        display: none;
+        overflow: auto;
+        height: calc(100vh - 60px);
+      }
+
+      /* ================= FIXED TOP BAR ================= */
+      .top-controls {
+        position: sticky;
+        top: 70px;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 100;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .top-controls input {
+        width: 250px;
+      }
+
+      /* ================= SECOND FILTER (CENTER) ================= */
+      .center-controls {
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      /* ================= TABLE ================= */
       table {
         width: 90%;
-        margin: 80px auto;
+        margin: 40px auto;
         background: white;
         color: black;
         border-radius: 10px;
@@ -196,7 +227,7 @@
 
       th,
       td {
-        padding: 10px;
+        padding: 12px;
         text-align: center;
       }
 
@@ -205,23 +236,7 @@
         color: white;
       }
 
-      /* SEARCH */
-      .top-controls {
-        position: absolute;
-        top: 80px;
-        left: 30px;
-        display: flex;
-        gap: 10px;
-      }
-
-      /* ANALYSIS */
-      #analysis {
-        display: none;
-        overflow: auto;
-        height: calc(100vh - 60px);
-      }
-
-      /* ANIMATIONS */
+      /* ================= ANIMATION ================= */
       @keyframes pageEnter {
         from {
           opacity: 0;
@@ -260,7 +275,7 @@
       </div>
     </div>
 
-    <!-- DASHBOARD -->
+    <!-- ================= DASHBOARD ================= -->
     <div id="dashboard" class="container">
       <div class="left">
         <div class="box">
@@ -289,8 +304,9 @@
       </div>
     </div>
 
-    <!-- ANALYSIS -->
+    <!-- ================= ANALYSIS ================= -->
     <div id="analysis">
+      <!-- 🔥 TOP SEARCH -->
       <div class="top-controls">
         <input id="searchInput" placeholder="Search email..." />
         <select id="filterSelect">
@@ -302,7 +318,8 @@
         </select>
       </div>
 
-      <center>
+      <!-- 🔥 CENTER SEARCH (KEPT FROM OLD CODE) -->
+      <div class="center-controls">
         <input
           id="search"
           placeholder="Search email..."
@@ -313,7 +330,7 @@
           <option value="asc">Low → High</option>
           <option value="desc">High → Low</option>
         </select>
-      </center>
+      </div>
 
       <table>
         <thead>
@@ -345,18 +362,18 @@
         });
       });
 
-      /* NAV FUNCTIONS */
+      /* NAV */
       function showDashboard() {
         dashboard.style.display = "flex";
         analysis.style.display = "none";
       }
-
       function showAnalysis() {
         dashboard.style.display = "none";
         analysis.style.display = "block";
         loadTable();
       }
 
+      /* LOGOUT */
       function logout() {
         localStorage.clear();
         location.href = "login.html";
@@ -364,9 +381,7 @@
 
       /* LOAD TABLE */
       function loadTable() {
-        const email = localStorage.getItem("userEmail");
-
-        fetch(BASE_URL + "/api/analysis/user/" + email)
+        fetch(BASE_URL + "/api/admin/analysis")
           .then((res) => res.json())
           .then((res) => {
             data = res;
@@ -375,7 +390,7 @@
           });
       }
 
-      /* TABLE */
+      /* DISPLAY */
       function displayData(list) {
         tbody.innerHTML = list
           .map(
@@ -392,13 +407,13 @@
           .join("");
       }
 
-      /* SEARCH */
+      /* TOP SEARCH */
       searchInput.oninput = () => {
         let v = searchInput.value.toLowerCase();
         displayData(allData.filter((d) => d.email.toLowerCase().includes(v)));
       };
 
-      /* FILTER */
+      /* TOP FILTER */
       filterSelect.onchange = () => {
         let arr = [...allData];
         if (filterSelect.value === "scoreHigh")
@@ -410,13 +425,13 @@
         displayData(arr);
       };
 
-      /* OLD SEARCH */
+      /* CENTER SEARCH */
       function filterTable() {
         let val = search.value.toLowerCase();
         displayData(data.filter((d) => d.email.toLowerCase().includes(val)));
       }
 
-      /* OLD SORT */
+      /* CENTER SORT */
       function sortTable() {
         let arr = [...data];
         if (sort.value === "asc")
@@ -433,7 +448,7 @@
         );
       }
 
-      /* ANALYZE WITH TIMER */
+      /* ANALYZE */
       function analyze() {
         let file = document.getElementById("file").files[0];
         let skills = document.getElementById("skills").value;
@@ -455,7 +470,8 @@
         let formData = new FormData();
         formData.append("file", file);
         formData.append("skills", skills);
-        formData.append("email", localStorage.getItem("userEmail"));
+
+        /* ✅ NO USER EMAIL */
 
         fetch(BASE_URL + "/api/resume/upload", {
           method: "POST",
@@ -466,7 +482,9 @@
             clearInterval(timer);
             loading.style.display = "none";
 
-            email.innerText = res.email; // resume email
+            /* ✅ RESUME EMAIL */
+            document.getElementById("email").innerText = res.email;
+
             animateCircle(res.matchScore || 0);
 
             matched.innerHTML = res.matchedSkills.join("<br>");
